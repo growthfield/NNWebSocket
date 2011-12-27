@@ -660,16 +660,11 @@
     [ctx.socket writeData:[frame dataFrame] withTimeout:ctx.writeTimeout tag:TAG_CLOSING_HANDSHAKE];
 }
 
-- (void)context:(NNWebSocket *)ctx didWriteDataWithTag:(long)tag
-{
-    TRACE();
-    NSAssert(tag == TAG_CLOSING_HANDSHAKE, @"");
-    [ctx.socket readDataWithTimeout:ctx.readTimeout tag:TAG_CLOSING_HANDSHAKE];
-}
-
 - (void)context:(NNWebSocket *)ctx didReadData:(NSData *)data withTag:(long)tag
 {
-    [ctx.socket readDataWithTimeout:ctx.readTimeout tag:TAG_CLOSING_HANDSHAKE];
+    if (TAG_CLOSING_HANDSHAKE != tag) {
+        [ctx.socket readDataWithTimeout:ctx.readTimeout tag:TAG_CLOSING_HANDSHAKE];
+    }
 }
 
 - (void)contextDidDisconnect:(NNWebSocket *)ctx withError:(NSError *)error

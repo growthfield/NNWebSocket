@@ -47,8 +47,23 @@ describe(@"websocket", ^{
             [socket disconnect];
             [[theObject(&isConnected) shouldEventually] beNo];
         });
+        it(@"should be able to disconnect after send some frame", ^{
+            __block NSNumber* isDisconnectedProperly = [NSNumber numberWithBool:NO];
+            socket.onConnect = ^(NNWebSocket* socket) {
+                [socket send:[NNWebSocketFrame framePing]];
+                [socket disconnect];
+                isConnected = [NSNumber numberWithBool:YES];
+            };
+            socket.onDisconnect = ^(NNWebSocket* socket, NSError* error){
+                [error shouldBeNil];
+                isDisconnectedProperly = [NSNumber numberWithBool:YES];
+            };
+            [socket connect];
+            [[theObject(&isConnected) shouldEventually] beYes];
+            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+        });
     });
-
+    
     context(@"https connection", ^{
         __block NSNumber* isConnected = nil;
         __block NNWebSocket* socket = nil;

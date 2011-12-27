@@ -630,6 +630,7 @@
 		4044765614370DAD00C3DE5C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastUpgradeCheck = 0420;
 				ORGANIZATIONNAME = growthfield.jp;
 			};
 			buildConfigurationList = 4044765914370DAD00C3DE5C /* Build configuration list for PBXProject "NNWebSocket" */;
@@ -835,6 +836,7 @@
 				DSTROOT = /tmp/NNWebSocket.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				OTHER_LDFLAGS = (
 					"-all_load",
 					"-ObjC",
@@ -850,6 +852,7 @@
 				DSTROOT = /tmp/NNWebSocket.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				OTHER_LDFLAGS = (
 					"-all_load",
 					"-ObjC",
@@ -868,6 +871,7 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INFOPLIST_FILE = "NNWebSocketTests/NNWebSocketTests-Info.plist";
 				OTHER_LDFLAGS = (
 					"-ObjC",
@@ -887,6 +891,7 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INFOPLIST_FILE = "NNWebSocketTests/NNWebSocketTests-Info.plist";
 				OTHER_LDFLAGS = (
 					"-ObjC",
