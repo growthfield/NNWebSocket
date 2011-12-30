@@ -12,26 +12,26 @@ Connecting and event handling.
     // Create NNWebSocket instance
     NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
     // protocols can be set as commma separated string.  ex: @"foo, bar, burabura"
-    NNWebSocket* socket = [NNWebSocket alloc] initWithURL:url origin:nil protocols:nil];
+    __block NNWebSocket* socket = [NNWebSocket alloc] initWithURL:url origin:nil protocols:nil];
 
-    // onConnect block will be called after established websocket handshake with the server
-    socket.onConnect = ^(NNWebSocket* socket){
+    // 'connect' event listener will be called after established websocket handshake with the server
+    [socket on:@"connect" listener:^(NNEvent* event) {
         NSLog(@"Connected.");
         NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
         frame.payloadString = @"Hello World!";
         [socket send:frame];
-    };
+    }];
 
-    // onDisconnect block will be called after diconnected
-    socket.onDisconnect = ^(NNWebSocket* socket, NSError* error) {
+    // 'disconnect' event listener will be called after diconnected
+    [socket on:@"disconnect" listener:^(NNEvent* event) {
         NSLog(@"Disconnected.");
         if (error) {
             NSLog(@"With error! code=%d domain=%@", error.code, error.domain);
         }
-    };
+    }];
 
-    // onReceive block will be called when websocket frame is received
-    socket.onReceive = ^(NNWebSocket* socket, NNWebSocketFrame* frame) {
+    // 'receive' event listener  will be called when websocket frame is received
+    [socket on:@"receive" listener:^(NNEvent* event) {
         if (frame.opcode == NNWebSocketFrameOpcodeText) {
             // do something for text frame
         } else if (frame.opcode == NNWebSocketFrameOpcodeBinary) {
@@ -39,7 +39,7 @@ Connecting and event handling.
         } else if (frame.opcode == NNWebSocketFrameOpcodeContinuation) {
             // do something for continuation frame
         }
-    };
+    }];
 
     // Start to establish websocket connection
     [socket connect];

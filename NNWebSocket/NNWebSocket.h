@@ -1,15 +1,12 @@
 #import <Foundation/Foundation.h>
 #import "GCDAsyncSocket.h"
 #import "NNWebSocketFrame.h"
+#import "NNEventEmitter.h"
 
 @class NNWebSocket;
 @class NNWebSocketState;
 
 #define NNWEBSOCKET_ERROR_DOMAIN @"NNWebSocketErrorDmain"
-
-typedef void (^WebSocketOnConnectCallback)(NNWebSocket*);
-typedef void (^WebSocketOnDisconnectCallback)(NNWebSocket*, NSError*);
-typedef void (^WebSocketOnReceiveFrameCallback)(NNWebSocket*, NNWebSocketFrame*);
 
 typedef enum {
     // 1xx: connection error
@@ -34,7 +31,7 @@ typedef enum {
     NNWebSocketStatusInvalidUTF8Text = 1007
 } NNWebSocketStatus;
 
-@interface NNWebSocket : NSObject
+@interface NNWebSocket : NNEventEmitter
 {
     @private
     GCDAsyncSocket* socket_;
@@ -55,15 +52,8 @@ typedef enum {
     NSTimeInterval readTimeout_;
     NSTimeInterval writeTimeout_;
 
-    WebSocketOnConnectCallback onConnect_;
-    WebSocketOnDisconnectCallback onDisconnect_;
-    WebSocketOnReceiveFrameCallback onReceive_;
-
 }
 
-@property(nonatomic, copy) WebSocketOnConnectCallback onConnect;
-@property(nonatomic, copy) WebSocketOnDisconnectCallback onDisconnect;
-@property(nonatomic, copy) WebSocketOnReceiveFrameCallback onReceive;
 @property(nonatomic, assign) NSTimeInterval connectTimeout;
 @property(nonatomic, assign) NSTimeInterval readTimeout;
 @property(nonatomic, assign) NSTimeInterval writeTimeout;

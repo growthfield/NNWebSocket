@@ -87,11 +87,6 @@
 // Implementations =================================================
 @implementation NNWebSocket
 
-// public
-@synthesize onConnect = onConnect_;
-@synthesize onDisconnect = onDisconnect_;
-@synthesize onReceive = onReceive_;
-
 // private
 @synthesize socket = socket_;
 @synthesize state = state_;
@@ -139,7 +134,7 @@
         self.origin = origin ? origin : url.host;
         self.protocols = protocols;
         self.closeCode = NNWebSocketStatusNoStatus;
-        state_ = [NNWebSocketStateTCPClosed sharedState];
+        self.state = [NNWebSocketStateTCPClosed sharedState];
         self.socket = [[[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()] autorelease];
         self.socket.delegate = self;
         self.connectTimeout = 5;
@@ -161,9 +156,6 @@
     self.origin = nil;
     self.expectedAcceptKey = nil;
     self.currentFrame = nil;
-    self.onConnect = nil;
-    self.onDisconnect = nil;
-    self.onReceive = nil;
     [super dealloc];
 }
 
@@ -210,25 +202,19 @@
 - (void)didConnect
 {
     TRACE();
-    if (self.onConnect) {
-        self.onConnect(self);
-    }
+    [self emit:@"connect"];
 }
 
 - (void)didDisconnect:(NSError*)error
 {
     TRACE();
-    if (self.onDisconnect) {
-        self.onDisconnect(self, error);
-    }
+    [self emit:@"disconnect" event:[NNEvent event:error, nil]];
 }
 
 - (void)didRead:(NNWebSocketFrame*)frame
 {
     TRACE();
-    if (self.onReceive) {
-        self.onReceive(self, frame);
-    }
+    [self emit:@"receive" event:[NNEvent event:frame, nil]];
 }
 
 - (void)fail:(NSInteger)code
