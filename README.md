@@ -25,6 +25,7 @@ Connecting and event handling.
     // 'disconnect' event listener will be called after diconnected
     [socket on:@"disconnect" listener:^(NNEvent* event) {
         NSLog(@"Disconnected.");
+        NSError* error = [event value:0];
         if (error) {
             NSLog(@"With error! code=%d domain=%@", error.code, error.domain);
         }
@@ -32,6 +33,7 @@ Connecting and event handling.
 
     // 'receive' event listener  will be called when websocket frame is received
     [socket on:@"receive" listener:^(NNEvent* event) {
+        NNWebSocketFrame* frame = [event value:0];
         if (frame.opcode == NNWebSocketFrameOpcodeText) {
             // do something for text frame
         } else if (frame.opcode == NNWebSocketFrameOpcodeBinary) {
