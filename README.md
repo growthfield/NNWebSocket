@@ -15,7 +15,7 @@ Connecting and event handling.
     __block NNWebSocket* socket = [NNWebSocket alloc] initWithURL:url origin:nil protocols:nil];
 
     // 'connect' event listener will be called after established websocket handshake with the server
-    [socket on:@"connect" listener:^(NNEvent* event) {
+    [socket on:@"connect" listener:^(NNArgs* args) {
         NSLog(@"Connected.");
         NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
         frame.payloadString = @"Hello World!";
@@ -23,17 +23,17 @@ Connecting and event handling.
     }];
 
     // 'disconnect' event listener will be called after diconnected
-    [socket on:@"disconnect" listener:^(NNEvent* event) {
+    [socket on:@"disconnect" listener:^(NNArgs* args) {
         NSLog(@"Disconnected.");
-        NSError* error = [event value:0];
+        NSError* error = [args get:0];
         if (error) {
             NSLog(@"With error! code=%d domain=%@", error.code, error.domain);
         }
     }];
 
     // 'receive' event listener  will be called when websocket frame is received
-    [socket on:@"receive" listener:^(NNEvent* event) {
-        NNWebSocketFrame* frame = [event value:0];
+    [socket on:@"receive" listener:^(NNArgs* args) {
+        NNWebSocketFrame* frame = [get get:0];
         if (frame.opcode == NNWebSocketFrameOpcodeText) {
             // do something for text frame
         } else if (frame.opcode == NNWebSocketFrameOpcodeBinary) {
