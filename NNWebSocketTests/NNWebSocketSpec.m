@@ -40,12 +40,12 @@ describe(@"websocket", ^{
             [socket release];
         });
         it(@"should be established", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 isConnected = [NSNumber numberWithBool:YES];  
                 [socket disconnect];
             }];
-            [socket on:@"disconnect" listener:^(NNEvent* event) {
-                NSError* error = [event value:0];
+            [socket on:@"disconnect" listener:^(NNArgs* args) {
+                NSError* error = [args get:0];
                 [error shouldBeNil];
                 isDisconnectedProperly = [NSNumber numberWithBool:YES];                
             }];
@@ -54,13 +54,13 @@ describe(@"websocket", ^{
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
         it(@"should be able to disconnect after send some frame", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 [socket send:[NNWebSocketFrame framePing]];
                 [socket disconnect];
                 isConnected = [NSNumber numberWithBool:YES];                
             }];
-            [socket on:@"disconnect" listener:^(NNEvent* event) {
-                NSError* error = [event value:0];
+            [socket on:@"disconnect" listener:^(NNArgs* args) {
+                NSError* error = [args get:0];
                 [error shouldBeNil];
                 isDisconnectedProperly = [NSNumber numberWithBool:YES];                
             }];
@@ -86,12 +86,12 @@ describe(@"websocket", ^{
             [socket release];
         });
         it(@"should be established", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 isConnected = [NSNumber numberWithBool:YES];
                 [socket disconnect];
             }];
-            [socket on:@"disconnect" listener:^(NNEvent* event) {
-                NSError* error = [event value:0];
+            [socket on:@"disconnect" listener:^(NNArgs* args) {
+                NSError* error = [args get:0];
                 [error shouldBeNil];
                 isDisconnectedProperly = [NSNumber numberWithBool:YES];                
             }];
@@ -109,8 +109,8 @@ describe(@"websocket", ^{
             isDisconnectedProperly = [NSNumber numberWithBool:NO];
             NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
             socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];
-            [socket on:@"disconnect" listener:^(NNEvent* event) {
-                NSError* error = [event value:0];
+            [socket on:@"disconnect" listener:^(NNArgs* args) {
+                NSError* error = [args get:0];
                 [error shouldBeNil];
                 isDisconnectedProperly = [NSNumber numberWithBool:YES];                                
             }];
@@ -121,12 +121,12 @@ describe(@"websocket", ^{
             [socket release];
         });
         it(@"should receive pong frame in response to sending ping", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame framePing];
                 [socket send:frame];                
             }];
-            [socket on:@"receive" listener:^(NNEvent* event) {
-                NNWebSocketFrame* frame = [event value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -137,13 +137,13 @@ describe(@"websocket", ^{
         });
 
         it(@"should receive same text frame in response to text frame which length is 0", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = @"";
                 [socket send:frame];                
             }];
-            [socket on:@"receive" listener:^(NNEvent* event) {
-                NNWebSocketFrame* frame = [event value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -155,13 +155,13 @@ describe(@"websocket", ^{
         });
         
         it(@"should receive text frame which length is 0 in response to text frame which payload is nil", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = nil;
                 [socket send:frame];                
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -174,13 +174,13 @@ describe(@"websocket", ^{
         
         it(@"should receive same text frame in response to text frame which length is 125", ^{
             NSString* string = MakeString(125);
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = string;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -194,13 +194,13 @@ describe(@"websocket", ^{
 
         it(@"should receive same text frame in response to text frame which length is 126", ^{
             NSString* string = MakeString(126);
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* event) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = string;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -216,13 +216,13 @@ describe(@"websocket", ^{
             NSString* string = MakeString(65535);
             __block NSMutableString* concatString = [NSMutableString string];
             __block NSUInteger receiveCount = 0;
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = string;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 [receivedFrame autorelease];
                 receivedFrame = [frame retain];
                 if (receiveCount == 0) {
@@ -247,13 +247,13 @@ describe(@"websocket", ^{
             NSString* string = MakeString(65536);
             __block NSMutableString* concatString = [NSMutableString string];
             __block NSUInteger receiveCount = 0;
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = string;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 [receivedFrame autorelease];
                 receivedFrame = [frame retain];
                 if (receiveCount == 0) {
@@ -276,13 +276,13 @@ describe(@"websocket", ^{
         });
         
         it(@"should receive same binary frame in response to binary frame which length is 0", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = [NSData data];
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -294,13 +294,13 @@ describe(@"websocket", ^{
         });
 
         it(@"should receive binary frame which length is 0 in response to binary frame which payload is nil", ^{
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = nil;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -313,13 +313,13 @@ describe(@"websocket", ^{
         
         it(@"should receive same binary frame in response to binary frame which size is 125", ^{
             NSData* bytes = MakeBytes(125);
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = bytes;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -333,13 +333,13 @@ describe(@"websocket", ^{
 
         it(@"should receive same binary frame in response to binary frame which size is 126", ^{
             NSData* bytes = MakeBytes(126);
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = bytes;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];
@@ -355,13 +355,13 @@ describe(@"websocket", ^{
             NSData* bytes = MakeBytes(65535);
             __block NSMutableData* concatBytes = [NSMutableData data];
             __block NSUInteger receiveCount = 0;
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = bytes;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 [receivedFrame autorelease];
                 receivedFrame = [frame retain];
                 if (receiveCount == 0) {
@@ -386,13 +386,13 @@ describe(@"websocket", ^{
             NSData* bytes = MakeBytes(65536);
             __block NSMutableData* concatBytes = [NSMutableData data];
             __block NSUInteger receiveCount = 0;
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = bytes;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 [receivedFrame autorelease];
                 receivedFrame = [frame retain];
                 if (receiveCount == 0) {
@@ -416,13 +416,13 @@ describe(@"websocket", ^{
         it(@"should receive same binary frame in response to binary frame which size is 125", ^{
             UInt64 b[4] = {1000001, 2000002, 300003, UINT64_MAX};
             NSData* bytes = [NSData dataWithBytes:b length:sizeof(b)];
-            [socket on:@"connect" listener:^(NNEvent* event) {
+            [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = bytes;
                 [socket send:frame];
             }];
-            [socket on:@"receive" listener:^(NNEvent* envet) {
-                NNWebSocketFrame* frame = [envet value:0];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                NNWebSocketFrame* frame = [args get:0];
                 receivedFrame = [frame retain];
                 [socket disconnect];
             }];

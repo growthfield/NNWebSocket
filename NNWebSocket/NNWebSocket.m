@@ -208,13 +208,13 @@
 - (void)didDisconnect:(NSError*)error
 {
     TRACE();
-    [self emit:@"disconnect" event:[NNEvent event:error, nil]];
+    [self emit:@"disconnect" args:[[NNArgs args] add:error]];
 }
 
 - (void)didRead:(NNWebSocketFrame*)frame
 {
     TRACE();
-    [self emit:@"receive" event:[NNEvent event:frame, nil]];
+    [self emit:@"receive" args:[[NNArgs args] add:frame]];
 }
 
 - (void)fail:(NSInteger)code

@@ -95,10 +95,10 @@
 		409D9B521437F901009F2852 /* NNWebSocketSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B511437F901009F2852 /* NNWebSocketSpec.m */; };
 		409D9B5514403241009F2852 /* NNWebSocketFrame.h in Headers */ = {isa = PBXBuildFile; fileRef = 409D9B5314403241009F2852 /* NNWebSocketFrame.h */; };
 		409D9B5614403241009F2852 /* NNWebSocketFrame.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B5414403241009F2852 /* NNWebSocketFrame.m */; };
-		40DA09DF14ADF3DD0082D0DC /* NNEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = 40DA09DB14ADF3DD0082D0DC /* NNEvent.h */; };
-		40DA09E014ADF3DD0082D0DC /* NNEvent.m in Sources */ = {isa = PBXBuildFile; fileRef = 40DA09DC14ADF3DD0082D0DC /* NNEvent.m */; };
 		40DA09E114ADF3DD0082D0DC /* NNEventEmitter.h in Headers */ = {isa = PBXBuildFile; fileRef = 40DA09DD14ADF3DD0082D0DC /* NNEventEmitter.h */; };
 		40DA09E214ADF3DD0082D0DC /* NNEventEmitter.m in Sources */ = {isa = PBXBuildFile; fileRef = 40DA09DE14ADF3DD0082D0DC /* NNEventEmitter.m */; };
+		40FAB2E514B397F600760982 /* NNArgs.h in Headers */ = {isa = PBXBuildFile; fileRef = 40FAB2E314B397F600760982 /* NNArgs.h */; };
+		40FAB2E614B397F600760982 /* NNArgs.m in Sources */ = {isa = PBXBuildFile; fileRef = 40FAB2E414B397F600760982 /* NNArgs.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -286,10 +286,10 @@
 		409D9B511437F901009F2852 /* NNWebSocketSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketSpec.m; sourceTree = "<group>"; };
 		409D9B5314403241009F2852 /* NNWebSocketFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NNWebSocketFrame.h; sourceTree = "<group>"; };
 		409D9B5414403241009F2852 /* NNWebSocketFrame.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketFrame.m; sourceTree = "<group>"; };
-		40DA09DB14ADF3DD0082D0DC /* NNEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNEvent.h; path = vendor/NNUtil/NNUtil/NNEvent.h; sourceTree = SOURCE_ROOT; };
-		40DA09DC14ADF3DD0082D0DC /* NNEvent.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNEvent.m; path = vendor/NNUtil/NNUtil/NNEvent.m; sourceTree = SOURCE_ROOT; };
 		40DA09DD14ADF3DD0082D0DC /* NNEventEmitter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNEventEmitter.h; path = vendor/NNUtil/NNUtil/NNEventEmitter.h; sourceTree = SOURCE_ROOT; };
 		40DA09DE14ADF3DD0082D0DC /* NNEventEmitter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNEventEmitter.m; path = vendor/NNUtil/NNUtil/NNEventEmitter.m; sourceTree = SOURCE_ROOT; };
+		40FAB2E314B397F600760982 /* NNArgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNArgs.h; path = vendor/NNUtil/NNUtil/NNArgs.h; sourceTree = SOURCE_ROOT; };
+		40FAB2E414B397F600760982 /* NNArgs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNArgs.m; path = vendor/NNUtil/NNUtil/NNArgs.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -412,8 +412,8 @@
 		40447A681437124100C3DE5C /* NNUtil */ = {
 			isa = PBXGroup;
 			children = (
-				40DA09DB14ADF3DD0082D0DC /* NNEvent.h */,
-				40DA09DC14ADF3DD0082D0DC /* NNEvent.m */,
+				40FAB2E314B397F600760982 /* NNArgs.h */,
+				40FAB2E414B397F600760982 /* NNArgs.m */,
 				40DA09DD14ADF3DD0082D0DC /* NNEventEmitter.h */,
 				40DA09DE14ADF3DD0082D0DC /* NNEventEmitter.m */,
 				40447A691437127200C3DE5C /* NNBase64.h */,
@@ -594,8 +594,8 @@
 				40447A711437127200C3DE5C /* NSString+Trimming.h in Headers */,
 				409D9B5514403241009F2852 /* NNWebSocketFrame.h in Headers */,
 				4002261C14A96DF500545D2C /* GCDAsyncSocket.h in Headers */,
-				40DA09DF14ADF3DD0082D0DC /* NNEvent.h in Headers */,
 				40DA09E114ADF3DD0082D0DC /* NNEventEmitter.h in Headers */,
+				40FAB2E514B397F600760982 /* NNArgs.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -703,8 +703,8 @@
 				40447A721437127200C3DE5C /* NSString+Trimming.m in Sources */,
 				409D9B5614403241009F2852 /* NNWebSocketFrame.m in Sources */,
 				4002261D14A96DF500545D2C /* GCDAsyncSocket.m in Sources */,
-				40DA09E014ADF3DD0082D0DC /* NNEvent.m in Sources */,
 				40DA09E214ADF3DD0082D0DC /* NNEventEmitter.m in Sources */,
+				40FAB2E614B397F600760982 /* NNArgs.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
