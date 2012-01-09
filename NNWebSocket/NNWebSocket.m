@@ -136,7 +136,6 @@
         self.closeCode = NNWebSocketStatusNoStatus;
         self.state = [NNWebSocketStateTCPClosed sharedState];
         self.socket = [[[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()] autorelease];
-        self.socket.delegate = self;
         self.connectTimeout = 5;
         self.readTimeout = 5;
         self.writeTimeout = 5;
