@@ -38,7 +38,6 @@ typedef enum {
     UInt8* maskingKey_;
     NSData* payload_;
 }
-
 @property(nonatomic, assign) BOOL fin;
 @property(nonatomic, assign) BOOL rsv1;
 @property(nonatomic, assign) BOOL rsv2;
@@ -50,7 +49,6 @@ typedef enum {
 @property(nonatomic, assign) UInt8* maskingKey;
 @property(assign, getter=payloadString, setter=setPayloadString:) NSString* payloadString;
 @property(assign, getter=payloadData, setter=setPayloadData:) NSData* payloadData;
-
 + (id)frameText;
 + (id)frameBinary;
 + (id)frameContinuation;
@@ -60,5 +58,4 @@ typedef enum {
 + (id)frameWithOpcode:(NNWebSocketFrameOpcode)opcode;
 - (id)initWithOpcode:(NNWebSocketFrameOpcode)opcode;
 - (NSData*)dataFrame;
-
 @end

@@ -895,6 +895,7 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INFOPLIST_FILE = "NNWebSocketTests/NNWebSocketTests-Info.plist";
 				OTHER_LDFLAGS = (
@@ -915,6 +916,7 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = "";
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INFOPLIST_FILE = "NNWebSocketTests/NNWebSocketTests-Info.plist";
 				OTHER_LDFLAGS = (

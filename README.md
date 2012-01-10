@@ -25,13 +25,15 @@ Connecting and event handling.
     // 'disconnect' event listener will be called after diconnected
     [socket on:@"disconnect" listener:^(NNArgs* args) {
         NSLog(@"Disconnected.");
-        NSError* error = [args get:0];
-        if (error) {
-            NSLog(@"With error! code=%d domain=%@", error.code, error.domain);
+        if (!args) {
+            NSLog(@"Diconnected by client");
+        } else {
+            NSNumber* status = [args get:0];
+            NSLog(@"Diconnected with server, closure status=%d", [status integerValue]);
         }
     }];
 
-    // 'receive' event listener  will be called when websocket frame is received
+    // 'receive' event listener will be called when websocket frame is received
     [socket on:@"receive" listener:^(NNArgs* args) {
         NNWebSocketFrame* frame = [get get:0];
         if (frame.opcode == NNWebSocketFrameOpcodeText) {
@@ -41,6 +43,12 @@ Connecting and event handling.
         } else if (frame.opcode == NNWebSocketFrameOpcodeContinuation) {
             // do something for continuation frame
         }
+    }];
+
+    // 'error' event listener will be called when connection failed or disconnection with error
+    [socket on:@"error" listener:^(NNArgs* args) {
+        NSError* error  = [args get:0];
+        NSLog(@"With error! code=%d domain=%@", error.code, error.domain);
     }];
 
     // Start to establish websocket connection

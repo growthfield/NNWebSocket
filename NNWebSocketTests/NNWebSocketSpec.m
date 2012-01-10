@@ -25,14 +25,13 @@ static NSData* MakeBytes(NSUInteger size)
 SPEC_BEGIN(NNWebSocketSpec);
 
 describe(@"websocket", ^{
-   
-    context(@"http connection", ^{
+    context(@"ws connection", ^{
         __block NSNumber* isConnected = nil;
-        __block NSNumber* isDisconnectedProperly = nil;
+        __block NSNumber* isDisconnected = nil;
         __block NNWebSocket* socket = nil;
         beforeEach(^{
             isConnected = [NSNumber numberWithBool:NO];
-            isDisconnectedProperly = [NSNumber numberWithBool:NO];
+            isDisconnected = [NSNumber numberWithBool:NO];
             NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
             socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
         });
@@ -45,13 +44,13 @@ describe(@"websocket", ^{
                 [socket disconnect];
             }];
             [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSError* error = [args get:0];
-                [error shouldBeNil];
-                isDisconnectedProperly = [NSNumber numberWithBool:YES];                
+                NSNumber* status = [args get:0];
+                [status shouldBeNil];
+                isDisconnected = [NSNumber numberWithBool:YES];                
             }];
             [socket connect];
             [[theObject(&isConnected) shouldEventually] beYes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&isDisconnected) shouldEventually] beYes];
         });
         it(@"should be able to disconnect after send some frame", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
@@ -60,22 +59,22 @@ describe(@"websocket", ^{
                 isConnected = [NSNumber numberWithBool:YES];                
             }];
             [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSError* error = [args get:0];
-                [error shouldBeNil];
-                isDisconnectedProperly = [NSNumber numberWithBool:YES];                
+                NSNumber* status = [args get:0];
+                [status shouldBeNil];
+                isDisconnected = [NSNumber numberWithBool:YES];                
             }];
             [socket connect];
             [[theObject(&isConnected) shouldEventually] beYes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&isDisconnected) shouldEventually] beYes];
         });
     });
-    context(@"https connection", ^{
+    context(@"wss connection", ^{
         __block NSNumber* isConnected = nil;
-        __block NSNumber* isDisconnectedProperly = nil;
+        __block NSNumber* isDisconnected = nil;
         __block NNWebSocket* socket = nil;
         beforeEach(^{
             isConnected = [NSNumber numberWithBool:NO];
-            isDisconnectedProperly = [NSNumber numberWithBool:NO];
+            isDisconnected = [NSNumber numberWithBool:NO];
             NSURL* url = [NSURL URLWithString:@"wss://localhost:8443"];
             NSMutableDictionary* tlsSettings = [NSMutableDictionary dictionary];
             // Allow self-signed certificates
@@ -91,16 +90,90 @@ describe(@"websocket", ^{
                 [socket disconnect];
             }];
             [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSError* error = [args get:0];
-                [error shouldBeNil];
-                isDisconnectedProperly = [NSNumber numberWithBool:YES];                
+                NSNumber* status = [args get:0];
+                [status shouldBeNil];
+                isDisconnected = [NSNumber numberWithBool:YES];                
             }];
             [socket connect];
             [[theObject(&isConnected) shouldEventually] beYes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&isDisconnected) shouldEventually] beYes];
         });
     });
-
+    context(@"disconnection status", ^{
+        context(@"disconnected by server", ^{
+            it(@"should be server retrued status", ^{
+                __block NSNumber* isConnected = nil;
+                __block NSNumber* isDisconnected = nil;
+                __block NNWebSocket* socket = nil;
+                NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"disconnect"];
+                [socket on:@"connect" listener:^(NNArgs* args) {
+                    isConnected = [NSNumber numberWithBool:YES];
+                    [socket send:[NNWebSocketFrame frameText]];
+                }];
+                [socket on:@"disconnect" listener:^(NNArgs* args) {
+                    NSNumber* status = [args get:0];
+                    [status shouldNotBeNil];
+                    [[status should] equal:theValue(NNWebSocketStatusGoingAway)];
+                    isDisconnected = [NSNumber numberWithBool:YES];                                
+                }];
+                [socket connect];
+                [[theObject(&isConnected) shouldEventually] beYes];
+                [[theObject(&isDisconnected) shouldEventually] beYes];
+            });
+        });
+        context(@"disconnected by client", ^{
+            it(@"should be normal end", ^{
+                __block NSNumber* isConnected = nil;
+                __block NSNumber* isDisconnected = nil;
+                __block NNWebSocket* socket = nil;
+                NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];
+                [socket on:@"connect" listener:^(NNArgs* args) {
+                    isConnected = [NSNumber numberWithBool:YES];
+                    [socket send:[NNWebSocketFrame frameText]];
+                    [socket disconnect];
+                }];
+                [socket on:@"disconnect" listener:^(NNArgs* args) {
+                    NSNumber* status = [args get:0];
+                    [status shouldBeNil];
+                    isDisconnected = [NSNumber numberWithBool:YES];                                
+                }];
+                [socket connect];
+                [[theObject(&isConnected) shouldEventually] beYes];
+                [[theObject(&isDisconnected) shouldEventually] beYes];
+            });
+        });
+    });
+    context(@"error", ^{
+        it(@"should be raised when server could not be conntected", ^{
+            __block NSNumber* isConnected = [NSNumber numberWithBool:NO];
+            __block NSNumber* isDisconnected = [NSNumber numberWithBool:NO];
+            __block NSNumber* isErrored = [NSNumber numberWithBool:NO];         
+            __block NNWebSocket* socket = nil;
+            NSURL* url = [NSURL URLWithString:@"ws://localhost:9999"];
+            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"non_existen_server"];
+            [socket on:@"connect" listener:^(NNArgs* args) {
+                isConnected = [NSNumber numberWithBool:YES];
+            }];
+            [socket on:@"error" listener:^(NNArgs* args) {
+                NSError* error = [args get:0];
+                [[error should] beNonNil];
+                isErrored = [NSNumber numberWithBool:YES];
+            }];
+            [socket on:@"disconnect" listener:^(NNArgs* args) {
+                NSNumber* status = [args get:0];
+                [status shouldNotBeNil];
+                [[status should] equal:theValue(NNWebSocketStatusNormalEnd)];
+                isDisconnected = [NSNumber numberWithBool:YES];                                
+            }];
+            [socket connect];
+            [[theObject(&isConnected) shouldEventually] beNo];
+            [[theObject(&isDisconnected) shouldEventually] beNo];
+            [[theObject(&isErrored) shouldEventually] beYes];
+            
+        });
+    });
     context(@"roundtrip", ^{
         __block NNWebSocket* socket = nil;
         __block NNWebSocketFrame* receivedFrame = nil;
@@ -110,8 +183,8 @@ describe(@"websocket", ^{
             NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
             socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];
             [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSError* error = [args get:0];
-                [error shouldBeNil];
+                NSNumber* status = [args get:0];
+                [status shouldBeNil];
                 isDisconnectedProperly = [NSNumber numberWithBool:YES];                                
             }];
             receivedFrame = nil;
@@ -135,7 +208,6 @@ describe(@"websocket", ^{
             [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodePong)];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-
         it(@"should receive same text frame in response to text frame which length is 0", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
@@ -153,7 +225,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadString should] equal:@""];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-        
         it(@"should receive text frame which length is 0 in response to text frame which payload is nil", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
@@ -171,7 +242,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadString should] equal:@""];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-        
         it(@"should receive same text frame in response to text frame which length is 125", ^{
             NSString* string = MakeString(125);
             [socket on:@"connect" listener:^(NNArgs* args) {
@@ -191,7 +261,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadString should] equal:string];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-
         it(@"should receive same text frame in response to text frame which length is 126", ^{
             NSString* string = MakeString(126);
             [socket on:@"connect" listener:^(NNArgs* event) {
@@ -211,7 +280,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadString should] equal:string];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-
         it(@"should receive devided text frames in response to text frame which length is 65535", ^{
             NSString* string = MakeString(65535);
             __block NSMutableString* concatString = [NSMutableString string];
@@ -242,7 +310,6 @@ describe(@"websocket", ^{
             [[concatString should] equal:string];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-
         it(@"should receive devided text frames in response to text frame which length is 65536", ^{
             NSString* string = MakeString(65536);
             __block NSMutableString* concatString = [NSMutableString string];
@@ -268,13 +335,11 @@ describe(@"websocket", ^{
                     [socket disconnect];
                 }
             }];
-
             [socket connect];
             [[expectFutureValue(theValue(receivedFrame.fin)) shouldEventually] beYes];
             [[concatString should] equal:string];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-        
         it(@"should receive same binary frame in response to binary frame which length is 0", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
@@ -292,7 +357,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadData should] equal:[NSData data]];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-
         it(@"should receive binary frame which length is 0 in response to binary frame which payload is nil", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
@@ -310,7 +374,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadData should] equal:[NSData data]];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-        
         it(@"should receive same binary frame in response to binary frame which size is 125", ^{
             NSData* bytes = MakeBytes(125);
             [socket on:@"connect" listener:^(NNArgs* args) {
@@ -330,7 +393,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadData should] equal:bytes];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-
         it(@"should receive same binary frame in response to binary frame which size is 126", ^{
             NSData* bytes = MakeBytes(126);
             [socket on:@"connect" listener:^(NNArgs* args) {
@@ -350,7 +412,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadData should] equal:bytes];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-        
         it(@"should receive devided binary frames in response to binary frame which size is 65535", ^{
             NSData* bytes = MakeBytes(65535);
             __block NSMutableData* concatBytes = [NSMutableData data];
@@ -381,7 +442,6 @@ describe(@"websocket", ^{
             [[concatBytes should] equal:bytes];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-
         it(@"should receive devided binary frames in response to binary frame which size is 65536", ^{
             NSData* bytes = MakeBytes(65536);
             __block NSMutableData* concatBytes = [NSMutableData data];
@@ -412,7 +472,6 @@ describe(@"websocket", ^{
             [[concatBytes should] equal:bytes];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-        
         it(@"should receive same binary frame in response to binary frame which size is 125", ^{
             UInt64 b[4] = {1000001, 2000002, 300003, UINT64_MAX};
             NSData* bytes = [NSData dataWithBytes:b length:sizeof(b)];
@@ -433,7 +492,6 @@ describe(@"websocket", ^{
             [[receivedFrame.payloadData should] equal:bytes];
             [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
         });
-        
     });
 });
 

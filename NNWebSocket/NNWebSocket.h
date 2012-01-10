@@ -17,7 +17,7 @@ typedef enum {
     NNWebSocketErrorHttpResponseHeaderConnection,
     NNWebSocketErrorHttpResponseHeaderWebSocketAccept,
     // 2xx: wire format error
-    NNWebSocketErrorReceiveFrameMask = 200
+    NNWebSocketErrorReceiveFrameMask = 200,
 } NNWebSocketErrors;
 
 typedef enum {
@@ -47,22 +47,19 @@ typedef enum {
     NNWebSocketFrame* currentFrame_;
     UInt64 readPayloadRemains_;
     NSUInteger readyPayloadDividedCnt_;
-    UInt16 closeCode_;
+    UInt16 clientCloseCode_;
+    UInt16 serverCloseCode_;
     NSTimeInterval connectTimeout_;
     NSTimeInterval readTimeout_;
     NSTimeInterval writeTimeout_;
-
 }
-
 @property(nonatomic, assign) NSTimeInterval connectTimeout;
 @property(nonatomic, assign) NSTimeInterval readTimeout;
 @property(nonatomic, assign) NSTimeInterval writeTimeout;
-
 - (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols;
 - (id)initWithURL:(NSURL *)url origin:(NSString *)origin protocols:(NSString *)protocols tlsSettings:(NSDictionary*) tlsSettings;
 - (void)connect;
 - (void)disconnect;
-- (void)disconnectWithStatus:(UInt16)status;
+- (void)disconnectWithStatus:(NNWebSocketStatus)status;
 - (void)send:(NNWebSocketFrame*)frame;
-
 @end

@@ -31,8 +31,8 @@ function wsHandler(request) {
     }
     var protocol = request.requestedProtocols[0];
     var connection = request.accept(protocol, request.origin);
-    connection.on('close', function(connection) {
-        console.log((new Date()) + " Peer " + connection.remoteAddress + " disconnected.");
+    connection.on('close', function(connection, reason) {
+        console.log((new Date()) + " Peer " + connection.remoteAddress + " disconnected. Reason = '" + reason + "'");
     });
     console.log((new Date()) + " " + protocol + " protocol accepted.");
     if (protocol == 'echo') {
@@ -44,6 +44,11 @@ function wsHandler(request) {
                 console.log("Received Binary Message of " + message.binaryData.length + " bytes");
                 connection.sendBytes(message.binaryData);
             }
+        });
+    } else if (protocol == 'disconnect') {
+        connection.on('message', function(message) {
+            console.log('ok');
+            connection.drop(1001);
         });
     }
 }

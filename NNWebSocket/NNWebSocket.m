@@ -15,8 +15,24 @@
 #define TAG_WRITE_FRAME 600
 #define TAG_CLOSING_HANDSHAKE 700
 
-@interface NNWebSocket()
+#define SHARED_STATE_METHOD() \
++ (NNWebSocketState*)sharedState \
+{ \
+    static id instance_ = nil; \
+    if (!instance_) { \
+        instance_ = [[self alloc] init]; \
+    } \
+    return instance_; \
+}
 
+#define ERR(c) \
+[NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:(c) userInfo:nil]
+
+////////////////////////////////////////////////////////////////////
+// Interfaces
+////////////////////////////////////////////////////////////////////
+
+@interface NNWebSocket()
 @property(nonatomic, retain) GCDAsyncSocket* socket;
 @property(nonatomic, assign) NNWebSocketState* state;
 @property(nonatomic, assign) BOOL secure;
@@ -30,41 +46,41 @@
 @property(nonatomic, retain) NNWebSocketFrame* currentFrame;
 @property(nonatomic, assign) UInt64 readPayloadRemains;
 @property(nonatomic, assign) NSUInteger readPayloadSplitCount;
-@property(nonatomic, assign) UInt16 closeCode;
-
+@property(nonatomic, assign) UInt16 clientCloseCode;
+@property(nonatomic, assign) UInt16 serverCloseCode;
 - (void)didConnect;
-- (void)didDisconnect:(NSError*)error;
-- (void)didRead:(NNWebSocketFrame*)frame;
+- (void)didDisconnect:(NNWebSocketStatus)status;
+- (void)didReceive:(NNWebSocketFrame*)frame;
+- (void)didError:(NSError*)error;
 - (void)changeState:(NNWebSocketState *)newState;
-- (void)changeState:(NNWebSocketState *)newState onTransition:(void (^)())onTransition;
 
 @end
 
-// Abstract states ================================================
+// Abstract states =================================================
+
 @interface NNWebSocketState : NSObject
 - (void)didEnter:(NNWebSocket*)ctx;
 - (void)didExit:(NNWebSocket*)ctx;
 - (void)connect:(NNWebSocket*)ctx;
-- (void)disconnect:(NNWebSocket*)ctx withStatus:(UInt16)status;
-- (void)write:(NNWebSocket*)ctx frame:(NNWebSocketFrame*)frame;
-- (void)context:(NNWebSocket*)ctx didConnectToHost:(NSString *)host port:(UInt16)port;
-- (void)context:(NNWebSocket*)ctx didReadData:(NSData *)data withTag:(long)tag;
-- (void)context:(NNWebSocket*)ctx didWriteDataWithTag:(long)tag;
-- (void)contextDidDisconnect:(NNWebSocket*)ctx withError:(NSError*) error;
+- (void)disconnect:(NNWebSocket*)ctx status:(NNWebSocketStatus)status;
+- (void)send:(NNWebSocket*)ctx frame:(NNWebSocketFrame*)frame;
+- (void)fail:(NNWebSocket*)ctx code:(NSInteger)code;
+- (void)didOpen:(NNWebSocket*)ctx;
+- (void)didClose:(NNWebSocket*)ctx error:(NSError*)error;
+- (void)didRead:(NNWebSocket*)ctx data:(NSData*)data tag:(long)tag;
+- (void)didWrite:(NNWebSocket*)ctx tag:(long)tag;
 @end
 
-@interface NNWebSocketStateTCPEstablished : NNWebSocketState
-@end
-
-@interface NNWebSocketStateConnected : NNWebSocketStateTCPEstablished
+@interface NNWebSocketStateConnected : NNWebSocketState
 @end
 
 // Concrete states =================================================
-@interface NNWebSocketStateTCPClosed : NNWebSocketState
+
+@interface NNWebSocketStateDisconnected : NNWebSocketState
 + (id)sharedState;
 @end
 
-@interface NNWebSocketStateOpeningHandshake : NNWebSocketStateTCPEstablished
+@interface NNWebSocketStateConnecting : NNWebSocketState
 + (id)sharedState;
 @end
 
@@ -80,293 +96,134 @@
 + (id)sharedState;
 @end
 
-@interface NNWebSocketStateClosingHandshake : NNWebSocketState
+@interface NNWebSocketStateDisconnecting : NNWebSocketStateConnected
 + (id)sharedState;
 @end
 
-// Implementations =================================================
-@implementation NNWebSocket
 
-// private
-@synthesize socket = socket_;
-@synthesize state = state_;
-@synthesize secure = secure_;
-@synthesize tlsSettings = tlsSettings_;
-@synthesize host = host_;
-@synthesize port = port_;
-@synthesize resource = resource_;
-@synthesize protocols = protocols_;
-@synthesize origin = origin_;
-@synthesize expectedAcceptKey = expectedAcceptKey_;
-@synthesize currentFrame = currentFrame_;
-@synthesize readPayloadRemains = readPayloadRemains_;
-@synthesize readPayloadSplitCount = readyPayloadDividedCnt_;
-@synthesize closeCode = closeCode_;
-@synthesize connectTimeout = connectTimeout_;
-@synthesize readTimeout = readTimeout_;
-@synthesize writeTimeout = writeTimeout_;
+////////////////////////////////////////////////////////////////////
+// Implementations
+////////////////////////////////////////////////////////////////////
 
-- (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols
-{
-    return [self initWithURL:url origin:origin protocols:protocols tlsSettings:nil];
-}
-
-- (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols tlsSettings:(NSDictionary*)tlsSettings
-{
-    self = [super init];
-    if (self) {
-        NSString* scheme = url.scheme;
-        if (![@"ws" isEqualToString:scheme] && ![@"wss" isEqualToString:scheme]) {
-                 [NSException raise:@"UnsupportedProtocolException" format:@"Unsupported scheme %@", scheme];
-        }
-        self.secure = [@"wss" isEqualToString:url.scheme];
-        self.tlsSettings = tlsSettings;
-        self.host = url.host;
-        self.port = [url.port unsignedIntValue];
-        NSMutableString* resource = [NSMutableString stringWithString:url.path];
-        if ([resource length] == 0) {
-            [resource appendString:@"/"];
-        }
-        if (url.query) {
-            [resource appendFormat:@"?%@", url.query];
-        }
-        self.resource = resource;
-        self.origin = origin ? origin : url.host;
-        self.protocols = protocols;
-        self.closeCode = NNWebSocketStatusNoStatus;
-        self.state = [NNWebSocketStateTCPClosed sharedState];
-        self.socket = [[[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()] autorelease];
-        self.connectTimeout = 5;
-        self.readTimeout = 5;
-        self.writeTimeout = 5;
-    }
-    return self;
-}
-
-- (void)dealloc
-{
-    self.socket.delegate = nil;
-    self.state = nil;
-    self.socket = nil;
-    self.tlsSettings = nil;
-    self.host = nil;
-    self.resource = nil;
-    self.protocols = nil;
-    self.origin = nil;
-    self.expectedAcceptKey = nil;
-    self.currentFrame = nil;
-    [super dealloc];
-}
-
-- (void)connect
-{
-    TRACE();
-    [self.state connect:self];
-}
-
-- (void)disconnect
-{
-    TRACE();
-    [self disconnectWithStatus:WEBSOCKET_STATUS_NORMAL];
-}
-
-- (void)disconnectWithStatus:(UInt16)status
-{
-    TRACE();
-    [self.state disconnect:self withStatus:status];
-}
-
-- (void)send:(NNWebSocketFrame*)frame
-{
-    TRACE();
-    [self.state write:self frame:frame];
-}
-
-- (void)changeState:(NNWebSocketState *)newState
-{
-    [self changeState:newState onTransition:nil];
-}
-
-- (void)changeState:(NNWebSocketState *)newState onTransition:(void (^)())onTransition
-{
-    TRACE();
-    [state_ didExit:self];
-    state_ = newState;
-    [state_ didEnter:self];
-    if (onTransition) {
-        onTransition();
-    }
-}
-
-- (void)didConnect
-{
-    TRACE();
-    [self emit:@"connect"];
-}
-
-- (void)didDisconnect:(NSError*)error
-{
-    TRACE();
-    [self emit:@"disconnect" args:[[NNArgs args] add:error]];
-}
-
-- (void)didRead:(NNWebSocketFrame*)frame
-{
-    TRACE();
-    [self emit:@"receive" args:[[NNArgs args] add:frame]];
-}
-
-- (void)fail:(NSInteger)code
-{
-    TRACE();
-    [self changeState:[NNWebSocketStateTCPClosed sharedState] onTransition:^{
-        NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:code userInfo:nil];
-        [self didDisconnect:error];
-    }];
-}
-
-// AsyncSocket Delegate -----------------------------------
-
-- (void)socket:(GCDAsyncSocket *)socket didConnectToHost:(NSString *)host port:(UInt16)port
-{
-    TRACE();
-    [state_ context:self didConnectToHost:host port:port];
-}
-
-- (void)socket:(GCDAsyncSocket *)socket didReadData:(NSData *)data withTag:(long)tag
-{
-    TRACE();
-    [state_ context:self didReadData:data withTag:tag];
-}
-
-- (void)socket:(GCDAsyncSocket *)socket didWriteDataWithTag:(long)tag;
-{
-    TRACE();
-    [state_ context:self didWriteDataWithTag:tag];
-}
-
-- (void)socketDidDisconnect:(GCDAsyncSocket *)sock withError:(NSError *)error
-{
-    TRACE();
-    [state_ contextDidDisconnect:self withError:error];
-}
-
-@end
+// Abstract state impls ============================================
 
 @implementation NNWebSocketState
-
-- (void)didEnter:(NNWebSocket *)ctx {}
-- (void)didExit:(NNWebSocket *)ctx {}
-- (void)connect:(NNWebSocket*)ctx {}
-- (void)disconnect:(NNWebSocket *)ctx withStatus:(UInt16)status {}
-- (void)write:(NNWebSocket *)ctx frame:(NNWebSocketFrame *)frame {}
-- (void)context:(NNWebSocket *)ctx didConnectToHost:(NSString *)host port:(UInt16)port {}
-- (void)context:(NNWebSocket *)ctx didReadData:(NSData *)data withTag:(long)tag {}
-- (void)context:(NNWebSocket *)ctx didWriteDataWithTag:(long)tag {}
-- (void)contextDidDisconnect:(NNWebSocket *)ctx withError:(NSError *)error {}
-
-@end
-
-@implementation NNWebSocketStateTCPEstablished
-
-- (void)disconnect:(NNWebSocket *)ctx withStatus:(UInt16)status
+- (void)didEnter:(NNWebSocket*)ctx{}
+- (void)didExit:(NNWebSocket*)ctx{}
+- (void)connect:(NNWebSocket*)ctx{}
+- (void)disconnect:(NNWebSocket*)ctx status:(NNWebSocketStatus)status{}
+- (void)send:(NNWebSocket*)ctx frame:(NNWebSocketFrame*)frame{}
+- (void)fail:(NNWebSocket*)ctx code:(NSInteger)code
 {
     TRACE();
-    [ctx changeState:[NNWebSocketStateTCPClosed sharedState] onTransition:^{
-        [ctx didDisconnect:nil];
-    }];
+    NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:code userInfo:nil];
+    [ctx changeState:[NNWebSocketStateDisconnected sharedState]];
+    [ctx didError:error];
 }
-
-- (void)contextDidDisconnect:(NNWebSocket *)ctx withError:(NSError *)error
+- (void)didOpen:(NNWebSocket*)ctx{}
+- (void)didClose:(NNWebSocket*)ctx error:(NSError*)error
 {
     TRACE();
-    [ctx changeState:[NNWebSocketStateTCPClosed sharedState] onTransition:^{
-        [ctx didDisconnect:error];
-    }];
+    if (error) {
+        [ctx didError:error];
+    }
 }
-
+- (void)didRead:(NNWebSocket*)ctx data:(NSData*)data tag:(long)tag{}
+- (void)didWrite:(NNWebSocket*)ctx tag:(long)tag{}
 @end
 
 @implementation NNWebSocketStateConnected
-
-- (void)disconnect:(NNWebSocket *)ctx withStatus:(UInt16)status
+- (void)disconnect:(NNWebSocket *)ctx status:(NNWebSocketStatus)status
 {
     TRACE();
-    ctx.closeCode = status;
-    [ctx changeState:[NNWebSocketStateClosingHandshake sharedState]];
+    ctx.clientCloseCode = status;
+    [ctx changeState:[NNWebSocketStateDisconnecting sharedState]];
 }
-
-- (void)write:(NNWebSocket *)ctx frame:(NNWebSocketFrame *)frame
+- (void)send:(NNWebSocket *)ctx frame:(NNWebSocketFrame *)frame
 {
     TRACE();
     [ctx.socket writeData:[frame dataFrame] withTimeout:ctx.writeTimeout tag:TAG_WRITE_FRAME];
 }
-
-- (void)contextDidDisconnect:(NNWebSocket *)ctx withError:(NSError *)error
+- (void)didClose:(NNWebSocket*)ctx error:(NSError*)error
 {
     TRACE();
-    [ctx changeState:[NNWebSocketStateTCPClosed sharedState] onTransition:^{
-        [ctx didDisconnect:error];
-    }];
+    NSError* e = error;
+    if (error && [GCDAsyncSocketErrorDomain isEqualToString:error.domain] && error.code == GCDAsyncSocketClosedError) {
+        e = nil;
+    }
+    NSInteger serverCloseCode = ctx.serverCloseCode;
+    NSInteger clientCloseCode = ctx.clientCloseCode;
+    [ctx changeState:[NNWebSocketStateDisconnected sharedState]];
+    if (e) {
+        [ctx didError:e];
+    }
+    NSInteger code = 0;
+    if (!clientCloseCode && !serverCloseCode) {
+        code = NNWebSocketStatusDisconnectWithoutClosing;
+    } else if (serverCloseCode) {
+        code = serverCloseCode;
+    }
+    [ctx didDisconnect:code];
 }
-
 @end
 
-@implementation NNWebSocketStateTCPClosed
+// Concrete state impls ============================================
 
-+ (id)sharedState
-{
-    static id instance_ = nil;
-    if (!instance_) {
-        instance_ = [[self alloc] init];
-    }
-    return instance_;
-}
-
+@implementation NNWebSocketStateDisconnected
+SHARED_STATE_METHOD()
 - (void)didEnter:(NNWebSocket *)ctx
 {
+    TRACE();
     if (ctx.socket.isConnected) {
         [ctx.socket disconnect];
     }
+    ctx.serverCloseCode = 0;
+    ctx.clientCloseCode = 0;
 }
-
 - (void)connect:(NNWebSocket *)ctx
 {
     TRACE();
     [ctx.socket connectToHost:ctx.host onPort:ctx.port withTimeout:ctx.connectTimeout error:nil];
 }
-
-- (void)context:(NNWebSocket *)ctx didConnectToHost:(NSString *)host port:(UInt16)port
+- (void)didOpen:(NNWebSocket *)ctx
 {
     TRACE();
     if (ctx.secure) {
         [ctx.socket startTLS:ctx.tlsSettings];
     }
-    [ctx changeState:[NNWebSocketStateOpeningHandshake sharedState]];
+    [ctx changeState:[NNWebSocketStateConnecting sharedState]];
 }
-
 @end
 
-@interface NNWebSocketStateOpeningHandshake()
-    - (NSString*)createWebsocketKey;
-    - (NSString*)createExpectedWebsocketAccept:(NSString*)key;
-@end
-
-@implementation NNWebSocketStateOpeningHandshake
-
-+ (id)sharedState
+@implementation NNWebSocketStateConnecting
+SHARED_STATE_METHOD()
+- (NSString*)createWebsocketKey
 {
-    static id instance_ = nil;
-    if (!instance_) {
-        instance_ = [[self alloc] init];
+    TRACE();
+    unsigned char keySrc[16];
+    for (int i=0; i<16; i++) {
+        unsigned char byte = arc4random() % 254;
+        keySrc[i] = byte;
     }
-    return instance_;
+    NSData* keyData = [NSData dataWithBytes:keySrc length:16];
+    NNBase64* base64 = [NNBase64 base64];
+    return [base64 encode:keyData];
 }
-
+- (NSString*)createExpectedWebsocketAccept:(NSString*)key
+{
+    TRACE();
+    NSMutableString* str = [NSMutableString stringWithString:key];
+    [str appendString:WEBSOCKET_GUID];
+    NSData* src = [str dataUsingEncoding:NSASCIIStringEncoding];
+    unsigned char wk[CC_SHA1_DIGEST_LENGTH];
+    CC_SHA1([src bytes], [src length], wk);
+    NSData* result = [NSData dataWithBytes:wk length:CC_SHA1_DIGEST_LENGTH];
+    NNBase64* base64 = [NNBase64 base64];
+    return [base64 encode:result];
+}
 - (void)didEnter:(NNWebSocket *)ctx
 {
     TRACE();
-    // Craete request header for handshake
     NSString* websocketKey = [self createWebsocketKey];
     ctx.expectedAcceptKey = [self createExpectedWebsocketAccept:websocketKey];
     NSMutableString* handshake = [[[NSMutableString alloc] initWithCapacity:10] autorelease];
@@ -384,101 +241,59 @@
     NSData* request = [handshake dataUsingEncoding:NSASCIIStringEncoding];
     [ctx.socket writeData:request withTimeout:ctx.writeTimeout tag:TAG_OPENING_HANDSHAKE];
 }
-
-- (void)context:(NNWebSocket *)ctx didWriteDataWithTag:(long)tag
+- (void)didWrite:(NNWebSocket *)ctx tag:(long)tag
 {
     TRACE();
     NSAssert(tag == TAG_OPENING_HANDSHAKE, @"");
-    [ctx.socket readDataToData:[NSData dataWithBytes:"\r\n\r\n" length:4] withTimeout:ctx.readTimeout tag:TAG_OPENING_HANDSHAKE];
+    [ctx.socket readDataToData:[NSData dataWithBytes:"\r\n\r\n" length:4] withTimeout:ctx.readTimeout tag:TAG_OPENING_HANDSHAKE];    
 }
-
-- (void)context:(NNWebSocket *)ctx didReadData:(NSData *)data withTag:(long)tag
+- (void)didRead:(NNWebSocket *)ctx data:(NSData *)data tag:(long)tag
 {
     TRACE();
     NSAssert(tag == TAG_OPENING_HANDSHAKE, @"");
     CFHTTPMessageRef response = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, FALSE);
     if (!CFHTTPMessageAppendBytes(response, [data bytes], [data length])) {
-        [ctx fail:NNWebSocketErrorHttpResponse];
+        [self fail:ctx code:NNWebSocketErrorHttpResponse];
     }
     if (!CFHTTPMessageIsHeaderComplete(response)) {
-        [ctx fail:NNWebSocketErrorHttpResponseHeader];
+        [self fail:ctx code:NNWebSocketErrorHttpResponseHeader];
     }
     CFIndex statusCd = CFHTTPMessageGetResponseStatusCode(response);
     if (statusCd != 101) {
-        [ctx fail:NNWebSocketErrorHttpResponseStatus];
+        [ctx didError:ERR(NNWebSocketErrorHttpResponseStatus)];
     }
     NSString* upgrade = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Upgrade")) autorelease];
     NSString* connection = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Connection")) autorelease];
     NSString* acceptKey = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Sec-WebSocket-Accept")) autorelease];
     CFRelease(response);
     if (![upgrade isEqualToString:@"websocket"]) {
-        [ctx fail:NNWebSocketErrorHttpResponseHeaderUpgrade];
+        [self fail:ctx code:NNWebSocketErrorHttpResponseHeaderUpgrade];
         return;
     }
     if (![connection isEqualToString:@"Upgrade"]) {
-        [ctx fail:NNWebSocketErrorHttpResponseHeaderConnection];
+        [self fail:ctx code:NNWebSocketErrorHttpResponseHeaderConnection];
         return;
     }
     if (![acceptKey isEqualToString:ctx.expectedAcceptKey]) {
-        [ctx fail:NNWebSocketErrorHttpResponseHeaderWebSocketAccept];
+        [self fail:ctx code:NNWebSocketErrorHttpResponseHeaderWebSocketAccept];
         return;
     }
-    [ctx changeState:[NNWebSocketStateReadingFrameHeader sharedState] onTransition:^{
-        [ctx didConnect];
-    }];
-
+    [ctx changeState:[NNWebSocketStateReadingFrameHeader sharedState]];
+    [ctx didConnect];
 }
-
-- (NSString*)createWebsocketKey
-{
-    TRACE();
-    unsigned char keySrc[16];
-    for (int i=0; i<16; i++) {
-        unsigned char byte = arc4random() % 254;
-        keySrc[i] = byte;
-    }
-    NSData* keyData = [NSData dataWithBytes:keySrc length:16];
-    NNBase64* base64 = [NNBase64 base64];
-    return [base64 encode:keyData];
-}
-
-- (NSString*)createExpectedWebsocketAccept:(NSString*)key
-{
-    TRACE();
-    NSMutableString* str = [NSMutableString stringWithString:key];
-    [str appendString:WEBSOCKET_GUID];
-    NSData* src = [str dataUsingEncoding:NSASCIIStringEncoding];
-    unsigned char wk[CC_SHA1_DIGEST_LENGTH];
-    CC_SHA1([src bytes], [src length], wk);
-    NSData* result = [NSData dataWithBytes:wk length:CC_SHA1_DIGEST_LENGTH];
-    NNBase64* base64 = [NNBase64 base64];
-    return [base64 encode:result];
-}
-
 @end
 
 @implementation NNWebSocketStateReadingFrameHeader
-
-+ (id)sharedState
-{
-    static id instance_ = nil;
-    if (!instance_) {
-        instance_ = [[self alloc] init];
-    }
-    return instance_;
-}
-
+SHARED_STATE_METHOD()
 - (void)didEnter:(NNWebSocket *)ctx
 {
     TRACE();
     ctx.currentFrame = nil;
     ctx.readPayloadRemains = 0;
     ctx.readPayloadSplitCount = 0;
-    ctx.closeCode = NNWebSocketStatusNoStatus;
     [ctx.socket readDataToLength:2 withTimeout:-1 tag:TAG_READ_HEAD];
 }
-
-- (void)context:(NNWebSocket *)ctx didReadData:(NSData *)data withTag:(long)tag
+- (void)didRead:(NNWebSocket *)ctx data:(NSData *)data tag:(long)tag
 {
     TRACE();
     NSAssert(tag == TAG_READ_HEAD, @"");
@@ -491,7 +306,7 @@
     frame.rsv3 = (b[0] & NNWebSocketFrameMaskRsv3) > 0;
     frame.mask = (b[1] & NNWebSocketFrameMaskMask) > 0;
     if (frame.mask) {
-        [ctx fail:NNWebSocketErrorReceiveFrameMask];
+        [self fail:ctx code:NNWebSocketErrorReceiveFrameMask];
         return;
     }
     frame.payloadLength = b[1] & NNWebSocketFrameMaskPayloadLength;
@@ -503,20 +318,10 @@
         [ctx changeState:[NNWebSocketStateReadingFramePayload sharedState]];
     }
 }
-
 @end
 
 @implementation NNWebSocketStateReadingFrameExtPayloadLength
-
-+ (id)sharedState
-{
-    static id instance_ = nil;
-    if (!instance_) {
-        instance_ = [[self alloc] init];
-    }
-    return instance_;
-}
-
+SHARED_STATE_METHOD()
 - (void)didEnter:(NNWebSocket *)ctx
 {
     TRACE();
@@ -525,9 +330,9 @@
     NSUInteger readLen = payloadLen == 126 ? 2 : 8;
     [ctx.socket readDataToLength:readLen withTimeout:ctx.readTimeout tag:TAG_READ_EXT_PAYLOAD_LENGTH];
 }
-
-- (void)context:(NNWebSocket *)ctx didReadData:(NSData *)data withTag:(long)tag
+- (void)didRead:(NNWebSocket *)ctx data:(NSData *)data tag:(long)tag
 {
+    TRACE();
     NSAssert(tag == TAG_READ_EXT_PAYLOAD_LENGTH, @"");
     NSUInteger dataLen = [data length];
     NSAssert(dataLen == 2 || dataLen == 8, @"");
@@ -541,20 +346,10 @@
     ctx.currentFrame.extendedPayloadLength = extPayloadLen;
     [ctx changeState:[NNWebSocketStateReadingFramePayload sharedState]];
 }
-
 @end
 
 @implementation NNWebSocketStateReadingFramePayload
-
-+ (id)sharedState
-{
-    static id instance_ = nil;
-    if (!instance_) {
-        instance_ = [[self alloc] init];
-    }
-    return instance_;
-}
-
+SHARED_STATE_METHOD()
 - (void)didEnter:(NNWebSocket *)ctx
 {
     TRACE();
@@ -562,14 +357,13 @@
     UInt64 len = payloadLen <= 125 ? payloadLen : ctx.currentFrame.extendedPayloadLength;
     ctx.readPayloadRemains = len;
     if (len == 0) {
-        [self context:ctx didReadData:[NSData data] withTag:TAG_READ_PAYLOAD];
+        [self didRead:ctx data:[NSData data] tag:TAG_READ_PAYLOAD];
         return;
     }
     NSUInteger readLen = MIN(len, WEBSOCKET_MAX_PAYLOAD_SIZE);
     [ctx.socket readDataToLength:readLen withTimeout:ctx.readTimeout tag:TAG_READ_PAYLOAD];
 }
-
-- (void)context:(NNWebSocket *)ctx didReadData:(NSData *)data withTag:(long)tag
+- (void)didRead:(NNWebSocket *)ctx data:(NSData *)data tag:(long)tag
 {
     TRACE();
     NNWebSocketFrame* curFrame = ctx.currentFrame;
@@ -578,17 +372,16 @@
         UInt16 status = NNWebSocketStatusNoStatus;
         if ([data length] >= 2) {
             UInt8* b = (UInt8*)[data bytes];
-            status += b[0] << 8;
+            status = b[0] << 8;
             status += b[1];
-            ctx.closeCode = status;
+            ctx.serverCloseCode = status;
+            ctx.clientCloseCode = status;
         }
-        [ctx changeState:[NNWebSocketStateClosingHandshake sharedState]];
+        [ctx changeState:[NNWebSocketStateDisconnecting sharedState]];
         return;
     }
-
     NSAssert(tag == TAG_READ_PAYLOAD, @"");
     ctx.readPayloadRemains -= [data length];
-
     NNWebSocketFrame* frame;
     if (ctx.readPayloadSplitCount == 0) {
         if (ctx.readPayloadRemains == 0) {
@@ -611,57 +404,186 @@
     }
     frame.payloadData = data;
     if (ctx.readPayloadRemains == 0) {
-        [ctx changeState:[NNWebSocketStateReadingFrameHeader sharedState] onTransition:^{
-            [ctx didRead:frame];
-        }];
+        [ctx changeState:[NNWebSocketStateReadingFrameHeader sharedState]];
+        [ctx didReceive:frame];
     } else {
-        [ctx didRead:frame];
+        [ctx didReceive:frame];
         ctx.readPayloadSplitCount++;
         NSUInteger readLen = MIN(ctx.readPayloadRemains, WEBSOCKET_MAX_PAYLOAD_SIZE);
         [ctx.socket readDataToLength:readLen withTimeout:ctx.readTimeout tag:TAG_READ_PAYLOAD];
     }
 }
-
 @end
 
-@implementation NNWebSocketStateClosingHandshake
-
-+ (id)sharedState
+@implementation NNWebSocketStateDisconnecting
+SHARED_STATE_METHOD()
+- (void)disconnect:(NNWebSocket *)ctx status:(NNWebSocketStatus)status
 {
-    static id instance_ = nil;
-    if (!instance_) {
-        instance_ = [[self alloc] init];
-    }
-    return instance_;
+    TRACE();
+    // Do nothing
 }
-
 - (void)didEnter:(NNWebSocket *)ctx
 {
     TRACE();
-    UInt8 b[2] = {ctx.closeCode >> 8, ctx.closeCode & 0xff};
+    UInt16 c = ctx.clientCloseCode;
+    UInt8 b[2] = {c >> 8, c & 0xff};
     NSData* payloadData = [NSData dataWithBytes:b length:2];
     NNWebSocketFrame* frame = [NNWebSocketFrame frameClose];
     frame.payloadData = payloadData;
     [ctx.socket writeData:[frame dataFrame] withTimeout:ctx.writeTimeout tag:TAG_CLOSING_HANDSHAKE];
 }
-
-- (void)context:(NNWebSocket *)ctx didReadData:(NSData *)data withTag:(long)tag
+- (void)didRead:(NNWebSocket *)ctx data:(NSData *)data tag:(long)tag
 {
+    TRACE();
     if (TAG_CLOSING_HANDSHAKE != tag) {
         [ctx.socket readDataWithTimeout:ctx.readTimeout tag:TAG_CLOSING_HANDSHAKE];
     }
 }
+@end
 
-- (void)contextDidDisconnect:(NNWebSocket *)ctx withError:(NSError *)error
+
+@implementation NNWebSocket
+// private
+@synthesize socket = socket_;
+@synthesize state = state_;
+@synthesize secure = secure_;
+@synthesize tlsSettings = tlsSettings_;
+@synthesize host = host_;
+@synthesize port = port_;
+@synthesize resource = resource_;
+@synthesize protocols = protocols_;
+@synthesize origin = origin_;
+@synthesize expectedAcceptKey = expectedAcceptKey_;
+@synthesize currentFrame = currentFrame_;
+@synthesize readPayloadRemains = readPayloadRemains_;
+@synthesize readPayloadSplitCount = readyPayloadDividedCnt_;
+@synthesize clientCloseCode = clientCloseCode_;
+@synthesize serverCloseCode = serverCloseCode_;
+@synthesize connectTimeout = connectTimeout_;
+@synthesize readTimeout = readTimeout_;
+@synthesize writeTimeout = writeTimeout_;
+
+- (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols
+{
+    return [self initWithURL:url origin:origin protocols:protocols tlsSettings:nil];
+}
+- (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols tlsSettings:(NSDictionary*)tlsSettings
+{
+    self = [super init];
+    if (self) {
+        NSString* scheme = url.scheme;
+        if (![@"ws" isEqualToString:scheme] && ![@"wss" isEqualToString:scheme]) {
+                 [NSException raise:@"UnsupportedProtocolException" format:@"Unsupported scheme %@", scheme];
+        }
+        self.secure = [@"wss" isEqualToString:url.scheme];
+        self.tlsSettings = tlsSettings;
+        self.host = url.host;
+        self.port = [url.port unsignedIntValue];
+        NSMutableString* resource = [NSMutableString stringWithString:url.path];
+        if ([resource length] == 0) {
+            [resource appendString:@"/"];
+        }
+        if (url.query) {
+            [resource appendFormat:@"?%@", url.query];
+        }
+        self.resource = resource;
+        self.origin = origin ? origin : url.host;
+        self.protocols = protocols;
+        self.clientCloseCode = 0;
+        self.serverCloseCode = 0;
+        self.state = [NNWebSocketStateDisconnected sharedState];
+        self.socket = [[[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()] autorelease];
+        self.connectTimeout = 5;
+        self.readTimeout = 5;
+        self.writeTimeout = 5;
+    }
+    return self;
+}
+- (void)dealloc
+{
+    self.socket.delegate = nil;
+    self.state = nil;
+    self.socket = nil;
+    self.tlsSettings = nil;
+    self.host = nil;
+    self.resource = nil;
+    self.protocols = nil;
+    self.origin = nil;
+    self.expectedAcceptKey = nil;
+    self.currentFrame = nil;
+    [super dealloc];
+}
+- (void)connect
 {
     TRACE();
-    NSError* err = error;
-    if (error && [GCDAsyncSocketErrorDomain isEqualToString:error.domain] && error.code == GCDAsyncSocketClosedError) {
-        err = nil;
+    [self.state connect:self];
+}
+- (void)disconnect
+{
+    TRACE();
+    [self disconnectWithStatus:WEBSOCKET_STATUS_NORMAL];
+}
+- (void)disconnectWithStatus:(NNWebSocketStatus)status
+{
+    TRACE();
+    [self.state disconnect:self status:status];
+}
+- (void)send:(NNWebSocketFrame*)frame
+{
+    TRACE();
+    [self.state send:self frame:frame];
+}
+- (void)didConnect
+{
+    TRACE();
+    [self emit:@"connect"];
+}
+- (void)didDisconnect:(NNWebSocketStatus)status
+{
+    TRACE();
+    NNArgs* args = nil;
+    if (status) {
+        args = [[NNArgs args] add:[NSNumber numberWithInteger:status]];
     }
-    [ctx changeState:[NNWebSocketStateTCPClosed sharedState] onTransition:^{
-        [ctx didDisconnect:err];
-    }];
+    [self emit:@"disconnect" args:args];
+}
+- (void)didReceive:(NNWebSocketFrame*)frame
+{
+    TRACE();
+    [self emit:@"receive" args:[[NNArgs args] add:frame]];
+}
+- (void)didError:(NSError*)error
+{
+    TRACE();
+    [self emit:@"error" args:[[NNArgs args] add:error]];
+}
+- (void)changeState:(NNWebSocketState *)newState
+{
+    TRACE();
+    [state_ didExit:self];
+    state_ = newState;
+    [state_ didEnter:self];
 }
 
+// AsyncSocket Delegate -----------------------------------
+- (void)socket:(GCDAsyncSocket *)socket didConnectToHost:(NSString *)host port:(UInt16)port
+{
+    TRACE();
+    [state_ didOpen:self];
+}
+- (void)socket:(GCDAsyncSocket *)socket didReadData:(NSData *)data withTag:(long)tag
+{
+    TRACE();
+    [state_ didRead:self data:data tag:tag];
+}
+- (void)socket:(GCDAsyncSocket *)socket didWriteDataWithTag:(long)tag;
+{
+    TRACE();
+    [state_ didWrite:self tag:tag];
+}
+- (void)socketDidDisconnect:(GCDAsyncSocket *)sock withError:(NSError *)error
+{
+    TRACE();
+    [state_ didClose:self error:error];
+}
 @end

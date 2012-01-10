@@ -2,18 +2,15 @@
 #import "NNDebug.h"
 
 @interface NNWebSocketFrame()
-
 @property(assign, getter=payload, setter=setPayload:) NSData* payload;
 
 - (NSData*)payloadData;
 - (void)setPayloadData:(NSData*)data;
 - (NSString*)payloadString;
 - (void)setPayloadString:(NSString*)string;
-
 @end
 
 @implementation NNWebSocketFrame
-
 @synthesize fin = fin_;
 @synthesize rsv1 = rsv1_;
 @synthesize rsv2 = rsv2_;
@@ -23,7 +20,6 @@
 @synthesize payloadLength = payloadLength_;
 @synthesize extendedPayloadLength = extendedPayloadLength_;
 @synthesize maskingKey = maskingKey_;
-
 + (id)frameWithOpcode:(NNWebSocketFrameOpcode)opcode
 {
     NNWebSocketFrame* frame = [[[NNWebSocketFrame alloc] initWithOpcode:opcode] autorelease];
@@ -31,37 +27,30 @@
     frame.mask = YES;
     return frame;
 }
-
 + (id)frameText
 {
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeText];
 }
-
 + (id)frameBinary
 {
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeBinary];
 }
-
 + (id)frameContinuation
 {
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeConitunuation];
 }
-
 + (id)frameClose
 {
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeClose];
 }
-
 + (id)framePing
 {
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodePing];
 }
-
 + (id)framePong
 {
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodePong];
 }
-
 - (id)initWithOpcode:(NNWebSocketFrameOpcode)opcode
 {
     self = [super init];
@@ -72,14 +61,11 @@
     }
     return self;
 }
-
-
 - (void)dealloc
 {
     self.payload = nil;
     [super dealloc];
 }
-
 - (NSData*)dataFrame
 {
     // Calculate frame byte size
@@ -95,12 +81,10 @@
     if (self.mask) {
         headerLen += 4;
     }
-
     // Init buffers
     NSUInteger cnt = 0;
     UInt8 headerBuff[headerLen];
     memset(headerBuff, 0, sizeof(headerBuff));
-
     // fin
     if (self.fin) {
         headerBuff[cnt] += NNWebSocketFrameMaskFin;
@@ -149,14 +133,11 @@
             payloadBuff[i] ^= maskingKey[i % 4];
         }
     }
-
     NSMutableData* dataFrame = [NSMutableData data];
     [dataFrame appendBytes:headerBuff length:headerLen];
     [dataFrame appendData:maskedData];
-
     return dataFrame;
 }
-
 - (NSString*)payloadString
 {
     if (!self.payload) {
@@ -164,22 +145,18 @@
     }
     return [[[NSString alloc] initWithData:self.payload encoding:NSUTF8StringEncoding] autorelease];
 }
-
 - (void)setPayloadString:(NSString *)payloadString
 {
     self.payload = [payloadString dataUsingEncoding:NSUTF8StringEncoding];
 }
-
 - (NSData*)payloadData
 {
     return self.payload;
 }
-
 - (void)setPayloadData:(NSData *)payloadData
 {
     self.payload = payloadData;
 }
-
 - (void)setPayload:(NSData *)payload
 {
     if (payload_ != payload) {
@@ -194,10 +171,8 @@
         }
     }
 }
-
 - (NSData*)payload
 {
     return payload_;
 }
-
 @end
