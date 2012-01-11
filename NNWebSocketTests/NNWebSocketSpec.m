@@ -145,7 +145,7 @@ describe(@"websocket", ^{
             });
         });
     });
-    context(@"error", ^{
+    context(@"connect failed", ^{
         it(@"should be raised when server could not be conntected", ^{
             __block NSNumber* isConnected = [NSNumber numberWithBool:NO];
             __block NSNumber* isDisconnected = [NSNumber numberWithBool:NO];
@@ -156,7 +156,7 @@ describe(@"websocket", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
                 isConnected = [NSNumber numberWithBool:YES];
             }];
-            [socket on:@"error" listener:^(NNArgs* args) {
+            [socket on:@"connect_failed" listener:^(NNArgs* args) {
                 NSError* error = [args get:0];
                 [[error should] beNonNil];
                 isErrored = [NSNumber numberWithBool:YES];

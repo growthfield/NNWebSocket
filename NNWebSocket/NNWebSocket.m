@@ -25,14 +25,12 @@
     return instance_; \
 }
 
-#define ERR(c) \
-[NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:(c) userInfo:nil]
-
 ////////////////////////////////////////////////////////////////////
 // Interfaces
 ////////////////////////////////////////////////////////////////////
 
 @interface NNWebSocket()
+
 @property(nonatomic, retain) GCDAsyncSocket* socket;
 @property(nonatomic, assign) NNWebSocketState* state;
 @property(nonatomic, assign) BOOL secure;
@@ -49,9 +47,9 @@
 @property(nonatomic, assign) UInt16 clientCloseCode;
 @property(nonatomic, assign) UInt16 serverCloseCode;
 - (void)didConnect;
-- (void)didDisconnect:(NNWebSocketStatus)status;
+- (void)didConnectFailed:(NSError*)error;
+- (void)didDisconnect:(NNWebSocketStatus)status error:(NSError*)error;
 - (void)didReceive:(NNWebSocketFrame*)frame;
-- (void)didError:(NSError*)error;
 - (void)changeState:(NNWebSocketState *)newState;
 
 @end
@@ -64,7 +62,6 @@
 - (void)connect:(NNWebSocket*)ctx;
 - (void)disconnect:(NNWebSocket*)ctx status:(NNWebSocketStatus)status;
 - (void)send:(NNWebSocket*)ctx frame:(NNWebSocketFrame*)frame;
-- (void)fail:(NNWebSocket*)ctx code:(NSInteger)code;
 - (void)didOpen:(NNWebSocket*)ctx;
 - (void)didClose:(NNWebSocket*)ctx error:(NSError*)error;
 - (void)didRead:(NNWebSocket*)ctx data:(NSData*)data tag:(long)tag;
@@ -77,6 +74,10 @@
 // Concrete states =================================================
 
 @interface NNWebSocketStateDisconnected : NNWebSocketState
++ (id)sharedState;
+@end
+
+@interface NNWebSocketStateSocketOpening : NNWebSocketState
 + (id)sharedState;
 @end
 
@@ -113,21 +114,9 @@
 - (void)connect:(NNWebSocket*)ctx{}
 - (void)disconnect:(NNWebSocket*)ctx status:(NNWebSocketStatus)status{}
 - (void)send:(NNWebSocket*)ctx frame:(NNWebSocketFrame*)frame{}
-- (void)fail:(NNWebSocket*)ctx code:(NSInteger)code
-{
-    TRACE();
-    NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:code userInfo:nil];
-    [ctx changeState:[NNWebSocketStateDisconnected sharedState]];
-    [ctx didError:error];
-}
+- (void)fail:(NNWebSocket*)ctx code:(NSInteger)code{}
 - (void)didOpen:(NNWebSocket*)ctx{}
-- (void)didClose:(NNWebSocket*)ctx error:(NSError*)error
-{
-    TRACE();
-    if (error) {
-        [ctx didError:error];
-    }
-}
+- (void)didClose:(NNWebSocket*)ctx error:(NSError*)error{}
 - (void)didRead:(NNWebSocket*)ctx data:(NSData*)data tag:(long)tag{}
 - (void)didWrite:(NNWebSocket*)ctx tag:(long)tag{}
 @end
@@ -154,16 +143,13 @@
     NSInteger serverCloseCode = ctx.serverCloseCode;
     NSInteger clientCloseCode = ctx.clientCloseCode;
     [ctx changeState:[NNWebSocketStateDisconnected sharedState]];
-    if (e) {
-        [ctx didError:e];
-    }
     NSInteger code = 0;
     if (!clientCloseCode && !serverCloseCode) {
         code = NNWebSocketStatusDisconnectWithoutClosing;
     } else if (serverCloseCode) {
         code = serverCloseCode;
     }
-    [ctx didDisconnect:code];
+    [ctx didDisconnect:code error:e];
 }
 @end
 
@@ -174,13 +160,22 @@ SHARED_STATE_METHOD()
 - (void)didEnter:(NNWebSocket *)ctx
 {
     TRACE();
+    ctx.serverCloseCode = 0;
+    ctx.clientCloseCode = 0;
     if (ctx.socket.isConnected) {
         [ctx.socket disconnect];
     }
-    ctx.serverCloseCode = 0;
-    ctx.clientCloseCode = 0;
 }
 - (void)connect:(NNWebSocket *)ctx
+{
+    TRACE();
+    [ctx changeState:[NNWebSocketStateSocketOpening sharedState]];
+}
+@end
+
+@implementation NNWebSocketStateSocketOpening
+SHARED_STATE_METHOD()
+- (void)didEnter:(NNWebSocket *)ctx
 {
     TRACE();
     [ctx.socket connectToHost:ctx.host onPort:ctx.port withTimeout:ctx.connectTimeout error:nil];
@@ -192,6 +187,11 @@ SHARED_STATE_METHOD()
         [ctx.socket startTLS:ctx.tlsSettings];
     }
     [ctx changeState:[NNWebSocketStateConnecting sharedState]];
+}
+- (void)didClose:(NNWebSocket*)ctx error:(NSError*)error
+{
+    TRACE();
+    [ctx didConnectFailed:error];
 }
 @end
 
@@ -220,6 +220,12 @@ SHARED_STATE_METHOD()
     NSData* result = [NSData dataWithBytes:wk length:CC_SHA1_DIGEST_LENGTH];
     NNBase64* base64 = [NNBase64 base64];
     return [base64 encode:result];
+}
+- (void)fail:(NNWebSocket*)ctx code:(NSInteger)code
+{
+    TRACE();
+    NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:code userInfo:nil];
+    [ctx didConnectFailed:error];
 }
 - (void)didEnter:(NNWebSocket *)ctx
 {
@@ -260,7 +266,7 @@ SHARED_STATE_METHOD()
     }
     CFIndex statusCd = CFHTTPMessageGetResponseStatusCode(response);
     if (statusCd != 101) {
-        [ctx didError:ERR(NNWebSocketErrorHttpResponseStatus)];
+        [self fail:ctx code:NNWebSocketErrorHttpResponseStatus];
     }
     NSString* upgrade = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Upgrade")) autorelease];
     NSString* connection = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Connection")) autorelease];
@@ -280,6 +286,11 @@ SHARED_STATE_METHOD()
     }
     [ctx changeState:[NNWebSocketStateReadingFrameHeader sharedState]];
     [ctx didConnect];
+}
+- (void)didClose:(NNWebSocket*)ctx error:(NSError*)error
+{
+    TRACE();
+    [ctx didConnectFailed:error];
 }
 @end
 
@@ -306,7 +317,9 @@ SHARED_STATE_METHOD()
     frame.rsv3 = (b[0] & NNWebSocketFrameMaskRsv3) > 0;
     frame.mask = (b[1] & NNWebSocketFrameMaskMask) > 0;
     if (frame.mask) {
-        [self fail:ctx code:NNWebSocketErrorReceiveFrameMask];
+        NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:NNWebSocketErrorReceiveFrameMask userInfo:nil];
+        [ctx changeState:[NNWebSocketStateDisconnected sharedState]];
+        [ctx didDisconnect:NNWebSocketStatusDisconnectWithoutClosing error:error];
         return;
     }
     frame.payloadLength = b[1] & NNWebSocketFrameMaskPayloadLength;
@@ -538,13 +551,21 @@ SHARED_STATE_METHOD()
     TRACE();
     [self emit:@"connect"];
 }
-- (void)didDisconnect:(NNWebSocketStatus)status
+- (void)didConnectFailed:(NSError*)error;
 {
     TRACE();
-    NNArgs* args = nil;
+    [self changeState:[NNWebSocketStateDisconnected sharedState]];
+    NNArgs* args = [[NNArgs args] add:error];
+    [self emit:@"connect_failed" args:args];
+}
+- (void)didDisconnect:(NNWebSocketStatus)status error:(NSError *)error
+{
+    TRACE();
+    NSNumber* st = nil;
     if (status) {
-        args = [[NNArgs args] add:[NSNumber numberWithInteger:status]];
+        st = [NSNumber numberWithInteger:status];
     }
+    NNArgs* args = [[[NNArgs args] add:st] add:error];
     [self emit:@"disconnect" args:args];
 }
 - (void)didReceive:(NNWebSocketFrame*)frame
@@ -552,6 +573,7 @@ SHARED_STATE_METHOD()
     TRACE();
     [self emit:@"receive" args:[[NNArgs args] add:frame]];
 }
+
 - (void)didError:(NSError*)error
 {
     TRACE();

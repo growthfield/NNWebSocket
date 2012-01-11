@@ -24,11 +24,12 @@ Connecting and event handling.
 
     // 'disconnect' event listener will be called after diconnected
     [socket on:@"disconnect" listener:^(NNArgs* args) {
+        NSNumber* status = [args get:0];
+        NSError* error = [args get:1];
         NSLog(@"Disconnected.");
-        if (!args) {
+        if (!status) {
             NSLog(@"Diconnected by client");
         } else {
-            NSNumber* status = [args get:0];
             NSLog(@"Diconnected with server, closure status=%d", [status integerValue]);
         }
     }];
@@ -45,10 +46,10 @@ Connecting and event handling.
         }
     }];
 
-    // 'error' event listener will be called when connection failed or disconnection with error
-    [socket on:@"error" listener:^(NNArgs* args) {
+    // 'connect_failed' event listener will be called when client can't connect to server
+    [socket on:@"connect_failed" listener:^(NNArgs* args) {
         NSError* error  = [args get:0];
-        NSLog(@"With error! code=%d domain=%@", error.code, error.domain);
+        NSLog(@"Could not connect to server! code=%d domain=%@", error.code, error.domain);
     }];
 
     // Start to establish websocket connection
