@@ -260,13 +260,16 @@ SHARED_STATE_METHOD()
     CFHTTPMessageRef response = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, FALSE);
     if (!CFHTTPMessageAppendBytes(response, [data bytes], [data length])) {
         [self fail:ctx code:NNWebSocketErrorHttpResponse];
+        return;
     }
     if (!CFHTTPMessageIsHeaderComplete(response)) {
         [self fail:ctx code:NNWebSocketErrorHttpResponseHeader];
+        return;
     }
     CFIndex statusCd = CFHTTPMessageGetResponseStatusCode(response);
     if (statusCd != 101) {
         [self fail:ctx code:NNWebSocketErrorHttpResponseStatus];
+        return;
     }
     NSString* upgrade = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Upgrade")) autorelease];
     NSString* connection = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Connection")) autorelease];
