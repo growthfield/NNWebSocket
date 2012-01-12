@@ -576,12 +576,6 @@ SHARED_STATE_METHOD()
     TRACE();
     [self emit:@"receive" args:[[NNArgs args] add:frame]];
 }
-
-- (void)didError:(NSError*)error
-{
-    TRACE();
-    [self emit:@"error" args:[[NNArgs args] add:error]];
-}
 - (void)changeState:(NNWebSocketState *)newState
 {
     TRACE();
