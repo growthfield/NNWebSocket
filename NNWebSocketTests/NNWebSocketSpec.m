@@ -11,7 +11,6 @@ static NSString* MakeString(NSUInteger length)
     buff[length] = '\0';
     return [NSMutableString stringWithCString:buff encoding:NSASCIIStringEncoding];
 }
-
 static NSData* MakeBytes(NSUInteger size);
 static NSData* MakeBytes(NSUInteger size)
 {
@@ -23,477 +22,597 @@ static NSData* MakeBytes(NSUInteger size)
 }
 
 SPEC_BEGIN(NNWebSocketSpec);
-
 describe(@"websocket", ^{
-    context(@"ws connection", ^{
-        __block NSNumber* isConnected = nil;
-        __block NSNumber* isDisconnected = nil;
+    NSNumber* Yes = [NSNumber numberWithBool:YES];
+    NSNumber* No = [NSNumber numberWithBool:NO];
+    context(@"when client connects to", ^{
+        __block NSNumber* onConnect = nil;
+        __block NSNumber* onConnectFailed = nil;
+        __block NSNumber* onDisconnect = nil;
+        __block NNWebSocket* socket = nil;
+        context(@"server via http", ^{
+            beforeEach(^{
+                onConnect = No;
+                NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"]; 
+            });
+            afterEach(^{
+                [socket release];
+            });
+            it(@"connect event should be emitted", ^{
+                [socket on:@"connect" listener:^(NNArgs* args) {
+                    [args shouldBeNil];
+                    onConnect = Yes;  
+                }];
+                [socket connect];
+                [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            }); 
+        });
+        context(@"server via https", ^{
+            beforeEach(^{
+                onConnect = No;
+                NSURL* url = [NSURL URLWithString:@"wss://localhost:8443"];
+                NSMutableDictionary* tlsSettings = [NSMutableDictionary dictionary];
+                [tlsSettings setObject:[NSNumber numberWithBool:YES] forKey:(NSString*)kCFStreamSSLAllowsAnyRoot];
+                NNWebSocketOptions* opts = [NNWebSocketOptions options];
+                opts.tlsSettings = tlsSettings;
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo" options:opts];            
+            });
+            afterEach(^{
+                [socket disconnect];
+            });
+            it(@"connect event should be emitted", ^{
+                [socket on:@"connect" listener:^(NNArgs* args) {
+                    [args shouldBeNil];
+                    onConnect = Yes;
+                }];
+                [socket connect];
+                [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            }); 
+        });
+        context(@"server using invalid scheme", ^{
+            beforeEach(^{
+                onConnect = No;
+                onConnectFailed = No;
+                onDisconnect = No;
+                NSURL* url = [NSURL URLWithString:@"http://localhost:9999"];
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
+            });
+            afterEach(^{
+                [socket release];
+            });
+            it(@"connect_failed event should be emitted", ^{
+                [socket on:@"connect_failed" listener:^(NNArgs* args) {
+                    onConnectFailed = Yes; 
+                }];
+                [socket on:@"disconnect" listener:^(NNArgs* args) {
+                    onDisconnect = Yes;
+                }];
+                [socket connect];
+                [[theObject(&onConnectFailed) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+                [[onDisconnect should] beNo];
+            });
+        });       
+        context(@"non exsiten port", ^{
+            beforeEach(^{
+                onConnect = No;
+                onConnectFailed = No;
+                onDisconnect = No;
+                NSURL* url = [NSURL URLWithString:@"ws://localhost:9999"];
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
+            });
+            afterEach(^{
+                [socket release];
+            });
+            it(@"connect_failed event should be emitted", ^{
+                [socket on:@"connect_failed" listener:^(NNArgs* args) {
+                    onConnectFailed = Yes; 
+                }];
+                [socket on:@"disconnect" listener:^(NNArgs* args) {
+                    onDisconnect = Yes;
+                }];
+                [socket connect];
+                [[theObject(&onConnectFailed) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+                [[onDisconnect should] beNo];
+            });
+        });
+        context(@"non exsiten server", ^{
+            beforeEach(^{
+                onConnect = No;
+                onConnectFailed = No;
+                onDisconnect = No;
+                NSURL* url = [NSURL URLWithString:@"ws://nonexistenserver:80"];
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
+            });
+            afterEach(^{
+                [socket release];
+            });
+            it(@"connect_failed event should be emitted", ^{
+                [socket on:@"connect_failed" listener:^(NNArgs* args) {
+                    onConnectFailed = Yes; 
+                }];
+                [socket on:@"disconnect" listener:^(NNArgs* args) {
+                    onDisconnect = Yes;
+                }];
+                [socket connect];
+                [[theObject(&onConnectFailed) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+                [[onDisconnect should] beNo];
+            });             
+        });
+        context(@"non websocket server", ^{
+            beforeEach(^{
+                onConnectFailed = No;
+                NSURL* url = [NSURL URLWithString:@"ws://example.com:80"];
+                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
+            });
+            afterEach(^{
+                [socket release];
+            });
+            it(@"connect_failed event should be emitted", ^{
+                [socket on:@"connect_failed" listener:^(NNArgs* args) {
+                    onConnectFailed = Yes; 
+                }];
+                [socket on:@"disconnect" listener:^(NNArgs* args) {
+                    onDisconnect = Yes;
+                }];
+                [socket connect];
+                [[theObject(&onConnectFailed) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+                [[onDisconnect should] beNo];
+            });             
+        });
+    });
+    context(@"when client disconnects server", ^{
+        __block NSNumber* onConnect = nil;
+        __block NSNumber* onDisconnect = nil;
         __block NNWebSocket* socket = nil;
         beforeEach(^{
-            isConnected = [NSNumber numberWithBool:NO];
-            isDisconnected = [NSNumber numberWithBool:NO];
+            onConnect = No;
+            onDisconnect = No;
             NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
             socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
         });
         afterEach(^{
             [socket release];
         });
-        it(@"should be established", ^{
+        it(@"disconnect event should be emitted", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
-                isConnected = [NSNumber numberWithBool:YES];  
+                onConnect = Yes;
                 [socket disconnect];
             }];
             [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSNumber* status = [args get:0];
-                [status shouldBeNil];
-                isDisconnected = [NSNumber numberWithBool:YES];                
+                NSNumber* clientInitiated = [args get:0];
+                NSNumber* status = [args get:1];
+                NSError* error = [args get:2];
+                [clientInitiated shouldNotBeNil];
+                [status shouldNotBeNil];
+                [error shouldBeNil];
+                [[clientInitiated should] equal:Yes];
+                [[status should] equal:theValue(1000)];
+                onDisconnect = Yes;
             }];
             [socket connect];
-            [[theObject(&isConnected) shouldEventually] beYes];
-            [[theObject(&isDisconnected) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&onDisconnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];                
         });
-        it(@"should be able to disconnect after send some frame", ^{
+        it(@"message just before disconnecting should be processed", ^{
+            __block NNWebSocketFrame* receivedFrame = nil;
+            NSString* msg = @"last message";
             [socket on:@"connect" listener:^(NNArgs* args) {
-                [socket send:[NNWebSocketFrame framePing]];
+                onConnect = Yes;
+                NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
+                frame.payloadString = msg;
+                [socket send:frame];
                 [socket disconnect];
-                isConnected = [NSNumber numberWithBool:YES];                
+            }];
+            [socket on:@"receive" listener:^(NNArgs* args) {
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[receivedFrame.payloadString should] equal:msg];
             }];
             [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSNumber* status = [args get:0];
-                [status shouldBeNil];
-                isDisconnected = [NSNumber numberWithBool:YES];                
+                NSNumber* clientInitiated = [args get:0];
+                NSNumber* status = [args get:1];
+                NSError* error = [args get:2];
+                [clientInitiated shouldNotBeNil];
+                [status shouldNotBeNil];
+                [error shouldBeNil];
+                onDisconnect = Yes;
             }];
             [socket connect];
-            [[theObject(&isConnected) shouldEventually] beYes];
-            [[theObject(&isDisconnected) shouldEventually] beYes];
-        });
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
+            [[theObject(&onDisconnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];                
+        });        
     });
-    context(@"wss connection", ^{
-        __block NSNumber* isConnected = nil;
-        __block NSNumber* isDisconnected = nil;
+    
+    context(@"when server disconnects client", ^{
+        __block NSNumber* onConnect = nil;
+        __block NSNumber* onDisconnect = nil;
         __block NNWebSocket* socket = nil;
         beforeEach(^{
-            isConnected = [NSNumber numberWithBool:NO];
-            isDisconnected = [NSNumber numberWithBool:NO];
-            NSURL* url = [NSURL URLWithString:@"wss://localhost:8443"];
-            NSMutableDictionary* tlsSettings = [NSMutableDictionary dictionary];
-            // Allow self-signed certificates
-            [tlsSettings setObject:[NSNumber numberWithBool:YES] forKey:(NSString*)kCFStreamSSLAllowsAnyRoot];
-            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo" tlsSettings:tlsSettings];            
+            onConnect = No;
+            onDisconnect = No;
+            NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
+            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"disconnect"];            
         });
         afterEach(^{
             [socket release];
         });
-        it(@"should be established", ^{
+        it(@"disconnect event should be emitted", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
-                isConnected = [NSNumber numberWithBool:YES];
-                [socket disconnect];
+                onConnect = Yes;
+                [socket send:[NNWebSocketFrame frameText]];
             }];
             [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSNumber* status = [args get:0];
-                [status shouldBeNil];
-                isDisconnected = [NSNumber numberWithBool:YES];                
-            }];
-            [socket connect];
-            [[theObject(&isConnected) shouldEventually] beYes];
-            [[theObject(&isDisconnected) shouldEventually] beYes];
-        });
-    });
-    context(@"disconnection status", ^{
-        context(@"disconnected by server", ^{
-            it(@"should be server retrued status", ^{
-                __block NSNumber* isConnected = nil;
-                __block NSNumber* isDisconnected = nil;
-                __block NNWebSocket* socket = nil;
-                NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
-                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"disconnect"];
-                [socket on:@"connect" listener:^(NNArgs* args) {
-                    isConnected = [NSNumber numberWithBool:YES];
-                    [socket send:[NNWebSocketFrame frameText]];
-                }];
-                [socket on:@"disconnect" listener:^(NNArgs* args) {
-                    NSNumber* status = [args get:0];
-                    [status shouldNotBeNil];
-                    [[status should] equal:theValue(NNWebSocketStatusGoingAway)];
-                    isDisconnected = [NSNumber numberWithBool:YES];                                
-                }];
-                [socket connect];
-                [[theObject(&isConnected) shouldEventually] beYes];
-                [[theObject(&isDisconnected) shouldEventually] beYes];
-            });
-        });
-        context(@"disconnected by client", ^{
-            it(@"should be normal end", ^{
-                __block NSNumber* isConnected = nil;
-                __block NSNumber* isDisconnected = nil;
-                __block NNWebSocket* socket = nil;
-                NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
-                socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];
-                [socket on:@"connect" listener:^(NNArgs* args) {
-                    isConnected = [NSNumber numberWithBool:YES];
-                    [socket send:[NNWebSocketFrame frameText]];
-                    [socket disconnect];
-                }];
-                [socket on:@"disconnect" listener:^(NNArgs* args) {
-                    NSNumber* status = [args get:0];
-                    [status shouldBeNil];
-                    isDisconnected = [NSNumber numberWithBool:YES];                                
-                }];
-                [socket connect];
-                [[theObject(&isConnected) shouldEventually] beYes];
-                [[theObject(&isDisconnected) shouldEventually] beYes];
-            });
-        });
-    });
-    context(@"connect failed", ^{
-        it(@"should be raised when server could not be conntected", ^{
-            __block NSNumber* isConnected = [NSNumber numberWithBool:NO];
-            __block NSNumber* isDisconnected = [NSNumber numberWithBool:NO];
-            __block NSNumber* isErrored = [NSNumber numberWithBool:NO];         
-            __block NNWebSocket* socket = nil;
-            NSURL* url = [NSURL URLWithString:@"ws://localhost:9999"];
-            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"non_existen_server"];
-            [socket on:@"connect" listener:^(NNArgs* args) {
-                isConnected = [NSNumber numberWithBool:YES];
-            }];
-            [socket on:@"connect_failed" listener:^(NNArgs* args) {
-                NSError* error = [args get:0];
-                [[error should] beNonNil];
-                isErrored = [NSNumber numberWithBool:YES];
-            }];
-            [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSNumber* status = [args get:0];
+                NSNumber* clientInitiated = [args get:0];
+                NSNumber* status = [args get:1];
+                NSError* error = [args get:2];
+                [clientInitiated shouldNotBeNil];
                 [status shouldNotBeNil];
-                [[status should] equal:theValue(NNWebSocketStatusNormalEnd)];
-                isDisconnected = [NSNumber numberWithBool:YES];                                
+                [error shouldBeNil];
+                [[clientInitiated should] equal:No];
+                [[status should] equal:theValue(1001)];
+                onDisconnect = Yes;
             }];
             [socket connect];
-            [[theObject(&isConnected) shouldEventually] beNo];
-            [[theObject(&isDisconnected) shouldEventually] beNo];
-            [[theObject(&isErrored) shouldEventually] beYes];
-            
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&onDisconnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];                
         });
     });
-    context(@"roundtrip", ^{
+    context(@"when client sends ping frame", ^{
+        __block NSNumber* onConnect = nil;
         __block NNWebSocket* socket = nil;
         __block NNWebSocketFrame* receivedFrame = nil;
-        __block NSNumber* isDisconnectedProperly = nil;
         beforeEach(^{
-            isDisconnectedProperly = [NSNumber numberWithBool:NO];
+            onConnect = No;
             NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
-            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];
-            [socket on:@"disconnect" listener:^(NNArgs* args) {
-                NSNumber* status = [args get:0];
-                [status shouldBeNil];
-                isDisconnectedProperly = [NSNumber numberWithBool:YES];                                
-            }];
-            receivedFrame = nil;
+            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
         });
         afterEach(^{
-            [receivedFrame release];
             [socket release];
         });
-        it(@"should receive pong frame in response to sending ping", ^{
+        it(@"pong frame should be received", ^{
+            NSString* msg = @"last message";
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame framePing];
-                [socket send:frame];                
+                frame.payloadString = msg;
+                [socket send:frame];
+                //[socket disconnect];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodePong)];
+                [[receivedFrame.payloadString should] equal:msg];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodePong)];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive same text frame in response to text frame which length is 0", ^{
+    });
+    context(@"text frame", ^{
+        __block NSNumber* onConnect = nil;
+        __block NNWebSocket* socket = nil;
+        __block NNWebSocketFrame* receivedFrame = nil;
+        beforeEach(^{
+            onConnect = No;
+            NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
+            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
+        });
+        afterEach(^{
+            [socket release];
+        });
+        it(@"which length is 0 should be sent", ^{
+            NSString* msg = @"last message";
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
-                frame.payloadString = @"";
-                [socket send:frame];                
+                frame.payloadString = msg;
+                [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
+                [[receivedFrame.payloadString should] equal:msg];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
-            [[receivedFrame.payloadString should] equal:@""];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive text frame which length is 0 in response to text frame which payload is nil", ^{
+        it(@"which payload is nil should be sent", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = nil;
-                [socket send:frame];                
+                [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
+                [[receivedFrame.payloadString should] equal:@""];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
-            [[receivedFrame.payloadString should] equal:@""];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive same text frame in response to text frame which length is 125", ^{
-            NSString* string = MakeString(125);
+        it(@"which length is 125 should be sent", ^{
+            NSUInteger length = 125;
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
-                frame.payloadString = string;
+                frame.payloadString = MakeString(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
+                [[theValue(receivedFrame.payloadString.length) should] equal:theValue(length)];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[receivedFrame.payloadString should] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
-            [[receivedFrame.payloadString should] equal:string];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive same text frame in response to text frame which length is 126", ^{
-            NSString* string = MakeString(126);
-            [socket on:@"connect" listener:^(NNArgs* event) {
+        it(@"which length is 126 should be sent", ^{
+            NSUInteger length = 126;
+            [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
-                frame.payloadString = string;
+                frame.payloadString = MakeString(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
+                [[theValue(receivedFrame.payloadString.length) should] equal:theValue(length)];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
-            [[receivedFrame.payloadString should] beNonNil];
-            [[receivedFrame.payloadString should] equal:string];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive devided text frames in response to text frame which length is 65535", ^{
-            NSString* string = MakeString(65535);
-            __block NSMutableString* concatString = [NSMutableString string];
+        it(@"which length is 65535 should be sent", ^{
+            __block NSNumber* isFinished = No;
             __block NSUInteger receiveCount = 0;
+            __block NSUInteger receiveTotalSize = 0;
+            NNWebSocketOptions* opts = [NNWebSocketOptions options];
+            NSUInteger maxPayloadSize = opts.maxPayloadSize;
+            NSUInteger length = 65535;
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
+                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
-                frame.payloadString = string;
+                frame.payloadString = MakeString(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                [receivedFrame autorelease];
-                receivedFrame = [frame retain];
-                if (receiveCount == 0) {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
-                    [[theValue(frame.fin) should] beNo];
-                } else {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
-                }
-                [concatString appendString:frame.payloadString];
                 receiveCount++;
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
                 if (receivedFrame.fin) {
-                    [socket disconnect];
+                    isFinished = Yes;
                 }
+                if (receiveCount == 1) {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];                    
+                } else {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
+                }
+                receiveTotalSize += receivedFrame.payloadString.length;
             }];
             [socket connect];
-            [[expectFutureValue(theValue(receivedFrame.fin)) shouldEventually] beYes];
-            [[concatString should] equal:string];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&isFinished) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theValue(receiveTotalSize) should] equal:theValue(length)];
+            [[theValue(receiveCount) should] equal:theValue((length + (maxPayloadSize - 1)) / maxPayloadSize)];
         });
-        it(@"should receive devided text frames in response to text frame which length is 65536", ^{
-            NSString* string = MakeString(65536);
-            __block NSMutableString* concatString = [NSMutableString string];
+        it(@"which length is 65536 should be sent", ^{
+            __block NSNumber* isFinished = No;
             __block NSUInteger receiveCount = 0;
+            __block NSUInteger receiveTotalSize = 0;
+            NNWebSocketOptions* opts = [NNWebSocketOptions options];
+            NSUInteger maxPayloadSize = opts.maxPayloadSize;
+            NSUInteger length = 65536;
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
+                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
-                frame.payloadString = string;
+                frame.payloadString = MakeString(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                [receivedFrame autorelease];
-                receivedFrame = [frame retain];
-                if (receiveCount == 0) {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];
-                    [[theValue(frame.fin) should] beNo];
-                } else {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
-                }
-                [concatString appendString:frame.payloadString];
                 receiveCount++;
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
                 if (receivedFrame.fin) {
-                    [socket disconnect];
+                    isFinished = Yes;
                 }
+                if (receiveCount == 1) {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeText)];                    
+                } else {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
+                }
+                receiveTotalSize += receivedFrame.payloadString.length;
             }];
             [socket connect];
-            [[expectFutureValue(theValue(receivedFrame.fin)) shouldEventually] beYes];
-            [[concatString should] equal:string];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&isFinished) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theValue(receiveTotalSize) should] equal:theValue(length)];
+            [[theValue(receiveCount) should] equal:theValue((length + (maxPayloadSize - 1)) / maxPayloadSize)];
         });
-        it(@"should receive same binary frame in response to binary frame which length is 0", ^{
+    });
+    context(@"binary frame", ^{
+        __block NSNumber* onConnect = nil;
+        __block NNWebSocket* socket = nil;
+        __block NNWebSocketFrame* receivedFrame = nil;
+        beforeEach(^{
+            onConnect = No;
+            NSURL* url = [NSURL URLWithString:@"ws://localhost:8080"];
+            socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:@"echo"];            
+        });
+        afterEach(^{
+            [socket release];
+        });
+        it(@"which size is 0 should be sent", ^{
+            NSData* data = [NSData data];
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
-                frame.payloadData = [NSData data];
+                frame.payloadData = data;
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
+                [[receivedFrame.payloadData should] equal:data];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
-            [[receivedFrame.payloadData should] equal:[NSData data]];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive binary frame which length is 0 in response to binary frame which payload is nil", ^{
+        it(@"which is nil should be sent", ^{
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = nil;
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
+                [[receivedFrame.payloadData should] equal:[NSData data]];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
-            [[receivedFrame.payloadData should] equal:[NSData data]];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive same binary frame in response to binary frame which size is 125", ^{
-            NSData* bytes = MakeBytes(125);
+        it(@"which length is 125 should be sent", ^{
+            NSUInteger length = 125;
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
-                frame.payloadData = bytes;
+                frame.payloadData = MakeBytes(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
+                [[theValue(receivedFrame.payloadData.length) should] equal:theValue(length)];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
-            [[receivedFrame.payloadData should] beNonNil];
-            [[receivedFrame.payloadData should] equal:bytes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive same binary frame in response to binary frame which size is 126", ^{
-            NSData* bytes = MakeBytes(126);
+        it(@"which length is 126 should be sent", ^{
+            NSUInteger length = 126;
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
-                frame.payloadData = bytes;
+                frame.payloadData = MakeBytes(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
+                [[theValue(receivedFrame.payloadData.length) should] equal:theValue(length)];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
-            [[receivedFrame.payloadData should] beNonNil];
-            [[receivedFrame.payloadData should] equal:bytes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
-        it(@"should receive devided binary frames in response to binary frame which size is 65535", ^{
-            NSData* bytes = MakeBytes(65535);
-            __block NSMutableData* concatBytes = [NSMutableData data];
+        it(@"which length is 65535 should be sent", ^{
+            __block NSNumber* isFinished = No;
             __block NSUInteger receiveCount = 0;
+            __block NSUInteger receiveTotalSize = 0;
+            NNWebSocketOptions* opts = [NNWebSocketOptions options];
+            NSUInteger maxPayloadSize = opts.maxPayloadSize;
+            NSUInteger length = 65535;
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
+                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
-                frame.payloadData = bytes;
+                frame.payloadData = MakeBytes(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                [receivedFrame autorelease];
-                receivedFrame = [frame retain];
-                if (receiveCount == 0) {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
-                    [[theValue(frame.fin) should] beNo];
-                } else {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
-                }
-                [concatBytes appendData:frame.payloadData];
                 receiveCount++;
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
                 if (receivedFrame.fin) {
-                    [socket disconnect];
+                    isFinished = Yes;
                 }
+                if (receiveCount == 1) {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];                    
+                } else {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
+                }
+                receiveTotalSize += receivedFrame.payloadString.length;
             }];
             [socket connect];
-            [[expectFutureValue(theValue(receivedFrame.fin)) shouldEventually] beYes];
-            [[concatBytes should] equal:bytes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&isFinished) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theValue(receiveTotalSize) should] equal:theValue(length)];
+            [[theValue(receiveCount) should] equal:theValue((length + (maxPayloadSize - 1)) / maxPayloadSize)];
         });
-        it(@"should receive devided binary frames in response to binary frame which size is 65536", ^{
-            NSData* bytes = MakeBytes(65536);
-            __block NSMutableData* concatBytes = [NSMutableData data];
+        it(@"which length is 65536 should be sent", ^{
+            __block NSNumber* isFinished = No;
             __block NSUInteger receiveCount = 0;
+            __block NSUInteger receiveTotalSize = 0;
+            NNWebSocketOptions* opts = [NNWebSocketOptions options];
+            NSUInteger maxPayloadSize = opts.maxPayloadSize;
+            NSUInteger length = 65536;
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
+                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
-                frame.payloadData = bytes;
+                frame.payloadData = MakeBytes(length);
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                [receivedFrame autorelease];
-                receivedFrame = [frame retain];
-                if (receiveCount == 0) {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
-                    [[theValue(frame.fin) should] beNo];
-                } else {
-                    [[theValue(frame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
-                }
-                [concatBytes appendData:frame.payloadData];
                 receiveCount++;
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
                 if (receivedFrame.fin) {
-                    [socket disconnect];
+                    isFinished = Yes;
                 }
+                if (receiveCount == 1) {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];                    
+                } else {
+                    [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeConitunuation)];                                        
+                }
+                receiveTotalSize += receivedFrame.payloadString.length;
             }];
             [socket connect];
-            [[expectFutureValue(theValue(receivedFrame.fin)) shouldEventually] beYes];
-            [[concatBytes should] equal:bytes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&isFinished) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theValue(receiveTotalSize) should] equal:theValue(length)];
+            [[theValue(receiveCount) should] equal:theValue((length + (maxPayloadSize - 1)) / maxPayloadSize)];
         });
-        it(@"should receive same binary frame in response to binary frame which size is 125", ^{
+        it(@"should be kept byte order", ^{
             UInt64 b[4] = {1000001, 2000002, 300003, UINT64_MAX};
-            NSData* bytes = [NSData dataWithBytes:b length:sizeof(b)];
+            NSData* data = [NSData dataWithBytes:b length:sizeof(b)];
             [socket on:@"connect" listener:^(NNArgs* args) {
+                onConnect = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
-                frame.payloadData = bytes;
+                frame.payloadData = data;
                 [socket send:frame];
             }];
             [socket on:@"receive" listener:^(NNArgs* args) {
-                NNWebSocketFrame* frame = [args get:0];
-                receivedFrame = [frame retain];
-                [socket disconnect];
+                receivedFrame = [args get:0];
+                [receivedFrame shouldNotBeNil];
+                [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
+                [[receivedFrame.payloadData should] equal:data];
             }];
             [socket connect];
-            [[theObject(&receivedFrame) shouldEventually] beNonNil];
-            [[theValue(receivedFrame.opcode) should] equal:theValue(NNWebSocketFrameOpcodeBinary)];
-            [[receivedFrame.payloadData should] beNonNil];
-            [[receivedFrame.payloadData should] equal:bytes];
-            [[theObject(&isDisconnectedProperly) shouldEventually] beYes];
+            [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
+            [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
         });
     });
 });
-
-
 SPEC_END;

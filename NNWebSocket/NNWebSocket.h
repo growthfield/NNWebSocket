@@ -1,16 +1,17 @@
 #import <Foundation/Foundation.h>
 #import "GCDAsyncSocket.h"
+#import "NNWebSocketOptions.h"
 #import "NNWebSocketFrame.h"
 #import "NNEventEmitter.h"
 
-@class NNWebSocket;
 @class NNWebSocketState;
 
 #define NNWEBSOCKET_ERROR_DOMAIN @"NNWebSocketErrorDmain"
 
 typedef enum {
     // 1xx: connection error
-    NNWebSocketErrorHttpResponse = 100,
+    NNWebSocketErrorUnsupportedScheme = 100,
+    NNWebSocketErrorHttpResponse,
     NNWebSocketErrorHttpResponseHeader,
     NNWebSocketErrorHttpResponseStatus,
     NNWebSocketErrorHttpResponseHeaderUpgrade,
@@ -20,24 +21,13 @@ typedef enum {
     NNWebSocketErrorReceiveFrameMask = 200,
 } NNWebSocketErrors;
 
-typedef enum {
-    NNWebSocketStatusNormalEnd = 1000,
-    NNWebSocketStatusGoingAway = 1001,
-    NNWebSocketStatusProtocolError = 1002,
-    NNWebSocketStatusDataTypeError = 1003,
-    NNWebSocketStatusFrameTooLarge = 1004,
-    NNWebSocketStatusNoStatus = 1005,
-    NNWebSocketStatusDisconnectWithoutClosing = 1006,
-    NNWebSocketStatusInvalidUTF8Text = 1007
-} NNWebSocketStatus;
-
 @interface NNWebSocket : NNEventEmitter
 {
     @private
+    NNWebSocketOptions* options_;
     GCDAsyncSocket* socket_;
     NNWebSocketState* state_;
-    BOOL secure_;
-    NSDictionary* tlsSettings_;
+    NSString* scheme_;
     NSString* host_;
     UInt16 port_;
     NSString* resource_;
@@ -47,19 +37,13 @@ typedef enum {
     NNWebSocketFrame* currentFrame_;
     UInt64 readPayloadRemains_;
     NSUInteger readyPayloadDividedCnt_;
-    UInt16 clientCloseCode_;
-    UInt16 serverCloseCode_;
-    NSTimeInterval connectTimeout_;
-    NSTimeInterval readTimeout_;
-    NSTimeInterval writeTimeout_;
+    NSNumber* closeCode_;
+    BOOL clientInitiatedClosure_;
 }
-@property(nonatomic, assign) NSTimeInterval connectTimeout;
-@property(nonatomic, assign) NSTimeInterval readTimeout;
-@property(nonatomic, assign) NSTimeInterval writeTimeout;
 - (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols;
-- (id)initWithURL:(NSURL *)url origin:(NSString *)origin protocols:(NSString *)protocols tlsSettings:(NSDictionary*) tlsSettings;
+- (id)initWithURL:(NSURL *)url origin:(NSString *)origin protocols:(NSString *)protocols options:(NNWebSocketOptions*)options;
 - (void)connect;
 - (void)disconnect;
-- (void)disconnectWithStatus:(NNWebSocketStatus)status;
+- (void)disconnectWithStatus:(NSUInteger)status;
 - (void)send:(NNWebSocketFrame*)frame;
 @end

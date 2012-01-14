@@ -47,7 +47,6 @@ function wsHandler(request) {
         });
     } else if (protocol == 'disconnect') {
         connection.on('message', function(message) {
-            console.log('ok');
             connection.drop(1001);
         });
     }

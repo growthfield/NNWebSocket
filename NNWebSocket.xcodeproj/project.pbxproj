@@ -20,6 +20,8 @@
 		40447A6E1437127200C3DE5C /* NNBase64.h in Headers */ = {isa = PBXBuildFile; fileRef = 40447A691437127200C3DE5C /* NNBase64.h */; };
 		40447A6F1437127200C3DE5C /* NNBase64.m in Sources */ = {isa = PBXBuildFile; fileRef = 40447A6A1437127200C3DE5C /* NNBase64.m */; };
 		40447A701437127200C3DE5C /* NNDebug.h in Headers */ = {isa = PBXBuildFile; fileRef = 40447A6B1437127200C3DE5C /* NNDebug.h */; };
+		405F2C0A14BFCCB900A57CAD /* NNWebSocketOptions.h in Headers */ = {isa = PBXBuildFile; fileRef = 405F2C0814BFCCB900A57CAD /* NNWebSocketOptions.h */; };
+		405F2C0B14BFCCB900A57CAD /* NNWebSocketOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 405F2C0914BFCCB900A57CAD /* NNWebSocketOptions.m */; };
 		409D9A701437B32A009F2852 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 409D9A6F1437B32A009F2852 /* CFNetwork.framework */; };
 		409D9B081437BBB4009F2852 /* KWAfterAllNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9A781437BBB4009F2852 /* KWAfterAllNode.m */; };
 		409D9B091437BBB4009F2852 /* KWAfterEachNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9A7A1437BBB4009F2852 /* KWAfterEachNode.m */; };
@@ -130,6 +132,8 @@
 		40447A691437127200C3DE5C /* NNBase64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNBase64.h; path = vendor/NNUtil/NNUtil/NNBase64.h; sourceTree = SOURCE_ROOT; };
 		40447A6A1437127200C3DE5C /* NNBase64.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNBase64.m; path = vendor/NNUtil/NNUtil/NNBase64.m; sourceTree = SOURCE_ROOT; };
 		40447A6B1437127200C3DE5C /* NNDebug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNDebug.h; path = vendor/NNUtil/NNUtil/NNDebug.h; sourceTree = SOURCE_ROOT; };
+		405F2C0814BFCCB900A57CAD /* NNWebSocketOptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NNWebSocketOptions.h; sourceTree = "<group>"; };
+		405F2C0914BFCCB900A57CAD /* NNWebSocketOptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketOptions.m; sourceTree = "<group>"; };
 		409AC8D8143714C50048E3A9 /* NNWebSocketFrameSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketFrameSpec.m; sourceTree = "<group>"; };
 		409D9A6F1437B32A009F2852 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		409D9A721437BBB4009F2852 /* Kiwi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Kiwi.h; sourceTree = "<group>"; };
@@ -366,6 +370,8 @@
 		4044766414370DAD00C3DE5C /* NNWebSocket */ = {
 			isa = PBXGroup;
 			children = (
+				405F2C0814BFCCB900A57CAD /* NNWebSocketOptions.h */,
+				405F2C0914BFCCB900A57CAD /* NNWebSocketOptions.m */,
 				409D9B5314403241009F2852 /* NNWebSocketFrame.h */,
 				409D9B5414403241009F2852 /* NNWebSocketFrame.m */,
 				4044766714370DAD00C3DE5C /* NNWebSocket.h */,
@@ -603,6 +609,7 @@
 				40FAB2E514B397F600760982 /* NNArgs.h in Headers */,
 				40F754B514B78F220044A17D /* NSString+NNUtil.h in Headers */,
 				40F754B714B78F220044A17D /* NSTimer+NNUtil.h in Headers */,
+				405F2C0A14BFCCB900A57CAD /* NNWebSocketOptions.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -713,6 +720,7 @@
 				40FAB2E614B397F600760982 /* NNArgs.m in Sources */,
 				40F754B614B78F220044A17D /* NSString+NNUtil.m in Sources */,
 				40F754B814B78F220044A17D /* NSTimer+NNUtil.m in Sources */,
+				405F2C0B14BFCCB900A57CAD /* NNWebSocketOptions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,6 +1,6 @@
 # NNWebSocket
 
-NNWebSocket is websocket client for Cocoa which adapt to websocket protocol version 8 (hybi 8, 9, 10)  
+NNWebSocket is websocket client for Cocoa which almost adapts to websocket protocol version 8 (Extensions is not yet)
 Currently, This library is not tested enough and it only be tested on iPhone simulator with [WebSocket-Node](https://github.com/Worlize/WebSocket-Node)
 
 ## Usage examples
@@ -14,9 +14,9 @@ Connecting and event handling.
     // protocols can be set as commma separated string.  ex: @"foo, bar, burabura"
     __block NNWebSocket* socket = [NNWebSocket alloc] initWithURL:url origin:nil protocols:nil];
 
-    // 'connect' event listener will be called after established websocket handshake with the server
+    // 'connect' event will be emitted after established websocket handshake with the server
     [socket on:@"connect" listener:^(NNArgs* args) {
-        NSLog(@"Connected.");
+        // connect event has no args, so args is always nil
         NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
         frame.payloadString = @"Hello World!";
         [socket send:frame];
@@ -24,18 +24,19 @@ Connecting and event handling.
 
     // 'disconnect' event listener will be called after diconnected
     [socket on:@"disconnect" listener:^(NNArgs* args) {
-        NSNumber* status = [args get:0];
-        NSError* error = [args get:1];
+        // disconnect event has 3 args
+        // First arg is flag whether disconnection is initiated by client or not
+        NSNumber* isClientInitiatedClose = [args get:0];
+        // Second arg is websocket closure status
+        NSNumber* status = [args get:1];
+        // Third args is NSError which is cause of disconnection
+        NSError* error = [args get:2];
         NSLog(@"Disconnected.");
-        if (!status) {
-            NSLog(@"Diconnected by client");
-        } else {
-            NSLog(@"Diconnected with server, closure status=%d", [status integerValue]);
-        }
     }];
 
     // 'receive' event listener will be called when websocket frame is received
     [socket on:@"receive" listener:^(NNArgs* args) {
+        // receive event has 1 arg, which is received frame
         NNWebSocketFrame* frame = [get get:0];
         if (frame.opcode == NNWebSocketFrameOpcodeText) {
             // do something for text frame
@@ -48,6 +49,7 @@ Connecting and event handling.
 
     // 'connect_failed' event listener will be called when client can't connect to server
     [socket on:@"connect_failed" listener:^(NNArgs* args) {
+        // connect_failed event has 1 arg, which is cause of connection failure
         NSError* error  = [args get:0];
         NSLog(@"Could not connect to server! code=%d domain=%@", error.code, error.domain);
     }];
@@ -65,7 +67,7 @@ Disconnecting.
 Connecting over SSL.
 
 ```objective-c
-     // Use wss:// scheme
+     // Use wss scheme
     NSURL* url = [NSURL URLWithString:@"wss://localhost:8443"];
     NNWebSocket* socket = [NNWebSocket alloc] initWithURL:url origin:nil protocols:nil];
 ```
@@ -78,5 +80,7 @@ Connecting over SSL with TLS options.
     NSMutableDictionary* tlsSettings = [NSMutableDictionary dictionary];
     // Allow self-signed certificates
     [tlsSettings setObject:[NSNumber numberWithBool:YES] forKey:(NSString*)kCFStreamSSLAllowsAnyRoot];
-    NNWebSocket* socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:nil tlsSettings:tlsSettings];
+    NNWebSocketOptions* opts = [NNWebSocketOptions options];
+    opts.tlsSettings = tlsSettings;
+    NNWebSocket* socket = [[NNWebSocket alloc] initWithURL:url origin:nil protocols:nil options:opts];
 ```
