@@ -1,5 +1,5 @@
 #import "NNWebSocketFrame.h"
-#import "NNDebug.h"
+#import "NNWebSocketDebug.h"
 
 @interface NNWebSocketFrame()
 @property(assign, getter=payload, setter=setPayload:) NSData* payload;
@@ -22,6 +22,7 @@
 @synthesize maskingKey = maskingKey_;
 + (id)frameWithOpcode:(NNWebSocketFrameOpcode)opcode
 {
+    TRACE();
     NNWebSocketFrame* frame = [[[NNWebSocketFrame alloc] initWithOpcode:opcode] autorelease];
     frame.fin = YES;
     frame.mask = YES;
@@ -29,30 +30,37 @@
 }
 + (id)frameText
 {
+    TRACE();
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeText];
 }
 + (id)frameBinary
 {
+    TRACE();
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeBinary];
 }
 + (id)frameContinuation
 {
+    TRACE();
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeConitunuation];
 }
 + (id)frameClose
 {
+    TRACE();
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodeClose];
 }
 + (id)framePing
 {
+    TRACE();
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodePing];
 }
 + (id)framePong
 {
+    TRACE();
     return [NNWebSocketFrame frameWithOpcode:NNWebSocketFrameOpcodePong];
 }
 - (id)initWithOpcode:(NNWebSocketFrameOpcode)opcode
 {
+    TRACE();
     self = [super init];
     if (self) {
         self.fin = YES;
@@ -63,11 +71,13 @@
 }
 - (void)dealloc
 {
+    TRACE();
     self.payload = nil;
     [super dealloc];
 }
 - (NSData*)dataFrame
 {
+    TRACE();
     // Calculate frame byte size
     NSUInteger payloadLen = [self.payload length];
     NSUInteger headerLen = 0;
@@ -123,7 +133,6 @@
             headerBuff[++cnt] = k;
         }
     }
-
     // payload
     NSMutableData* maskedData = [NSMutableData dataWithData:self.payload];
     UInt8* payloadBuff = (UInt8*)[maskedData mutableBytes];
@@ -140,6 +149,7 @@
 }
 - (NSString*)payloadString
 {
+    TRACE();
     if (!self.payload) {
         return @"";
     }
@@ -147,18 +157,22 @@
 }
 - (void)setPayloadString:(NSString *)payloadString
 {
+    TRACE();
     self.payload = [payloadString dataUsingEncoding:NSUTF8StringEncoding];
 }
 - (NSData*)payloadData
 {
+    TRACE();
     return self.payload;
 }
 - (void)setPayloadData:(NSData *)payloadData
 {
+    TRACE();
     self.payload = payloadData;
 }
 - (void)setPayload:(NSData *)payload
 {
+    TRACE();
     if (payload_ != payload) {
         [payload_ release];
         payload_ = [payload retain];
@@ -173,6 +187,7 @@
 }
 - (NSData*)payload
 {
+    TRACE();
     return payload_;
 }
 @end

@@ -1,6 +1,6 @@
 # NNWebSocket
 
-NNWebSocket is websocket client for Cocoa which almost adapts to websocket protocol version 8 (Extensions is not yet)
+NNWebSocket is websocket client for iOS which almost adapts to websocket protocol version 8 (Extensions is not yet)
 Currently, This library is not tested enough and it only be tested on iPhone simulator with [WebSocket-Node](https://github.com/Worlize/WebSocket-Node)
 
 ## Usage examples

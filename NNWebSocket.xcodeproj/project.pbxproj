@@ -95,6 +95,7 @@
 		409D9B521437F901009F2852 /* NNWebSocketSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B511437F901009F2852 /* NNWebSocketSpec.m */; };
 		409D9B5514403241009F2852 /* NNWebSocketFrame.h in Headers */ = {isa = PBXBuildFile; fileRef = 409D9B5314403241009F2852 /* NNWebSocketFrame.h */; };
 		409D9B5614403241009F2852 /* NNWebSocketFrame.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B5414403241009F2852 /* NNWebSocketFrame.m */; };
+		40BB884014CB6AD90025A89A /* NNWebSocketDebug.h in Headers */ = {isa = PBXBuildFile; fileRef = 40BB883F14CB6AD90025A89A /* NNWebSocketDebug.h */; };
 		40DA09E114ADF3DD0082D0DC /* NNEventEmitter.h in Headers */ = {isa = PBXBuildFile; fileRef = 40DA09DD14ADF3DD0082D0DC /* NNEventEmitter.h */; };
 		40DA09E214ADF3DD0082D0DC /* NNEventEmitter.m in Sources */ = {isa = PBXBuildFile; fileRef = 40DA09DE14ADF3DD0082D0DC /* NNEventEmitter.m */; };
 		40F754B514B78F220044A17D /* NSString+NNUtil.h in Headers */ = {isa = PBXBuildFile; fileRef = 40F754B114B78F220044A17D /* NSString+NNUtil.h */; };
@@ -290,6 +291,7 @@
 		409D9B511437F901009F2852 /* NNWebSocketSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketSpec.m; sourceTree = "<group>"; };
 		409D9B5314403241009F2852 /* NNWebSocketFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NNWebSocketFrame.h; sourceTree = "<group>"; };
 		409D9B5414403241009F2852 /* NNWebSocketFrame.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketFrame.m; sourceTree = "<group>"; };
+		40BB883F14CB6AD90025A89A /* NNWebSocketDebug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NNWebSocketDebug.h; sourceTree = "<group>"; };
 		40DA09DD14ADF3DD0082D0DC /* NNEventEmitter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNEventEmitter.h; path = vendor/NNUtil/NNUtil/NNEventEmitter.h; sourceTree = SOURCE_ROOT; };
 		40DA09DE14ADF3DD0082D0DC /* NNEventEmitter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNEventEmitter.m; path = vendor/NNUtil/NNUtil/NNEventEmitter.m; sourceTree = SOURCE_ROOT; };
 		40F754B114B78F220044A17D /* NSString+NNUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSString+NNUtil.h"; path = "vendor/NNUtil/NNUtil/NSString+NNUtil.h"; sourceTree = SOURCE_ROOT; };
@@ -376,6 +378,7 @@
 				409D9B5414403241009F2852 /* NNWebSocketFrame.m */,
 				4044766714370DAD00C3DE5C /* NNWebSocket.h */,
 				4044766814370DAD00C3DE5C /* NNWebSocket.m */,
+				40BB883F14CB6AD90025A89A /* NNWebSocketDebug.h */,
 				4044766514370DAD00C3DE5C /* Supporting Files */,
 				40447A62143711F200C3DE5C /* vendor */,
 			);
@@ -610,6 +613,7 @@
 				40F754B514B78F220044A17D /* NSString+NNUtil.h in Headers */,
 				40F754B714B78F220044A17D /* NSTimer+NNUtil.h in Headers */,
 				405F2C0A14BFCCB900A57CAD /* NNWebSocketOptions.h in Headers */,
+				40BB884014CB6AD90025A89A /* NNWebSocketDebug.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -868,6 +872,10 @@
 				DSTROOT = /tmp/NNWebSocket.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
+					"NNWEBSOCKET_DEBUG_LOG=1",
+					"$(inherited)",
+				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				OTHER_LDFLAGS = (
 					"-all_load",

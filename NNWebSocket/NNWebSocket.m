@@ -1,6 +1,6 @@
 #import <CommonCrypto/CommonDigest.h>
 #import "NNWebSocket.h"
-#import "NNDebug.h"
+#import "NNWebSocketDebug.h"
 #import "NNBase64.h"
 
 #define WEBSOCKET_GUID @"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -128,10 +128,12 @@ typedef enum {
 @synthesize clientInitiatedClosure = clientInitiatedClosure_;
 - (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols
 {
+    TRACE();
     return [self initWithURL:url origin:origin protocols:protocols options:nil];
 }
 - (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols options:(NNWebSocketOptions*)options
 {
+    TRACE();
     self = [super init];
     if (self) {
         NNWebSocketOptions* opts = [[options copy] autorelease];
@@ -159,6 +161,7 @@ typedef enum {
 }
 - (void)dealloc
 {
+    TRACE();
     self.options = nil;
     self.socket.delegate = nil;
     self.state = nil;
@@ -297,6 +300,7 @@ SHARED_STATE_METHOD()
         [ctx didConnectFailed:error];
         return;
     }
+    LOG(@"Connecting to %@://%@:%d", ctx.scheme, ctx.host, ctx.port);
     [ctx.socket connectToHost:ctx.host onPort:ctx.port withTimeout:ctx.options.connectTimeout error:nil];
 }
 - (void)didOpen:(NNWebSocket*)ctx
@@ -305,6 +309,7 @@ SHARED_STATE_METHOD()
     if ([@"wss" isEqualToString:ctx.scheme]) {
         [ctx.socket startTLS:ctx.options.tlsSettings];
     }
+    LOG(@"Connected.");
     [self handshake:ctx];
 }
 - (void)didClose:(NNWebSocket*)ctx error:(NSError*)error
@@ -441,6 +446,7 @@ SHARED_STATE_METHOD()
 }
 - (void)didRead:(NNWebSocket *)ctx data:(NSData *)data tag:(long)tag
 {
+    TRACE();
     if (tag == TAG_READ_HEAD) {
         [self didReadHeader:ctx data:data];
     } else if (tag == TAG_READ_EXT_PAYLOAD_LENGTH) {
@@ -451,6 +457,7 @@ SHARED_STATE_METHOD()
 }
 - (void)readHeader:(NNWebSocket*)ctx
 {
+    TRACE();
     ctx.currentFrame = nil;
     ctx.readPayloadRemains = 0;
     ctx.readPayloadSplitCount = 0;
@@ -479,6 +486,7 @@ SHARED_STATE_METHOD()
 }
 - (void)didReadHeader:(NNWebSocket*)ctx data:(NSData*)data
 {
+    TRACE();
     UInt8* b = (UInt8*)[data bytes];
     int opcode = b[0] & NNWebSocketFrameMaskOpcode;
     NNWebSocketFrame* frame = [NNWebSocketFrame frameWithOpcode:opcode];
@@ -577,10 +585,12 @@ SHARED_STATE_METHOD()
 SHARED_STATE_METHOD()
 - (void)disconnect:(NNWebSocket *)ctx status:(NSUInteger)status
 {
+    TRACE();
     // Do nothing.
 }
 - (void)send:(NNWebSocket *)ctx frame:(NNWebSocketFrame *)frame
 {
+    TRACE();
     // Do nothing.
 }
 - (void)didEnter:(NNWebSocket *)ctx
@@ -596,4 +606,3 @@ SHARED_STATE_METHOD()
     [ctx.socket writeData:[frame dataFrame] withTimeout:ctx.options.writeTimeout tag:TAG_WRITE_FRAME];
 }
 @end
-
