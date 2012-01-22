@@ -192,7 +192,7 @@ describe(@"websocket", ^{
             }];
             [socket connect];
             [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
-            [[theObject(&onDisconnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];                
+            [[theObject(&onDisconnect) shouldEventuallyBeforeTimingOutAfter(5.0)] beYes];                
         });
         it(@"message just before disconnecting should be processed", ^{
             __block NNWebSocketFrame* receivedFrame = nil;
@@ -383,7 +383,6 @@ describe(@"websocket", ^{
             NSUInteger length = 65535;
             [socket on:@"connect" listener:^(NNArgs* args) {
                 onConnect = Yes;
-                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = MakeString(length);
                 [socket send:frame];
@@ -417,7 +416,6 @@ describe(@"websocket", ^{
             NSUInteger length = 65536;
             [socket on:@"connect" listener:^(NNArgs* args) {
                 onConnect = Yes;
-                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameText];
                 frame.payloadString = MakeString(length);
                 [socket send:frame];
@@ -535,7 +533,6 @@ describe(@"websocket", ^{
             NSUInteger length = 65535;
             [socket on:@"connect" listener:^(NNArgs* args) {
                 onConnect = Yes;
-                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = MakeBytes(length);
                 [socket send:frame];
@@ -569,7 +566,6 @@ describe(@"websocket", ^{
             NSUInteger length = 65536;
             [socket on:@"connect" listener:^(NNArgs* args) {
                 onConnect = Yes;
-                isFinished = Yes;
                 NNWebSocketFrame* frame = [NNWebSocketFrame frameBinary];
                 frame.payloadData = MakeBytes(length);
                 [socket send:frame];
