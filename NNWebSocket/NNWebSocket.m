@@ -18,11 +18,13 @@
 + (NNWebSocketState*)sharedState \
 { \
     static id instance_ = nil; \
-    if (!instance_) { \
+    static dispatch_once_t once; \
+    dispatch_once(&once, ^{ \
         instance_ = [[self alloc] init]; \
-    } \
+    }); \
     return instance_; \
 }
+
 
 typedef enum {
     NNWebSocketStatusNormalEnd = 1000,
