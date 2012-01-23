@@ -311,6 +311,15 @@ SHARED_STATE_METHOD()
     if ([@"wss" isEqualToString:ctx.scheme]) {
         [ctx.socket startTLS:ctx.options.tlsSettings];
     }
+    if (ctx.options.enableBackgroundingOnSocket) {
+        [ctx.socket performBlock:^{
+            if([ctx.socket enableBackgroundingOnSocket]) {
+                LOG(@"Succeed to start on background");
+            } else {
+                LOG(@"Failed to start on background");                
+            }
+        }];
+    }
     LOG(@"Connected.");
     [self handshake:ctx];
 }

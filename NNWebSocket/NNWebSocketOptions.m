@@ -7,6 +7,7 @@
 @synthesize writeTimeout = writeTimeout_;
 @synthesize tlsSettings = tlsSettings_;
 @synthesize maxPayloadSize = maxPayloadSize_;
+@synthesize enableBackgroundingOnSocket = enableBackgroundingOnSocket_;
 +(NNWebSocketOptions*)options
 {
     TRACE();
@@ -21,6 +22,7 @@
         self.readTimeout = 5;
         self.writeTimeout = 5;
         self.maxPayloadSize = 16384;
+        self.enableBackgroundingOnSocket = NO;
     }
     return self;
 }
@@ -40,6 +42,7 @@
         o.writeTimeout = self.writeTimeout;
         o.tlsSettings = [[self.tlsSettings copyWithZone:zone] autorelease];
         o.maxPayloadSize = self.maxPayloadSize;
+        o.enableBackgroundingOnSocket = self.enableBackgroundingOnSocket;
     }
     return o;
 }
