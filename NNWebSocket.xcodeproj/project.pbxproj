@@ -12,9 +12,7 @@
 		4044766314370DAD00C3DE5C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4044766214370DAD00C3DE5C /* Foundation.framework */; };
 		4044766914370DAD00C3DE5C /* NNWebSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 4044766814370DAD00C3DE5C /* NNWebSocket.m */; };
 		4044767114370DAD00C3DE5C /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4044767014370DAD00C3DE5C /* SenTestingKit.framework */; };
-		4044767314370DAD00C3DE5C /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4044767214370DAD00C3DE5C /* UIKit.framework */; };
 		4044767414370DAD00C3DE5C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4044766214370DAD00C3DE5C /* Foundation.framework */; };
-		4044767614370DAD00C3DE5C /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4044767514370DAD00C3DE5C /* CoreGraphics.framework */; };
 		4044767914370DAD00C3DE5C /* libNNWebSocket.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4044765F14370DAD00C3DE5C /* libNNWebSocket.a */; };
 		4044767F14370DAD00C3DE5C /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4044767D14370DAD00C3DE5C /* InfoPlist.strings */; };
 		40447A6E1437127200C3DE5C /* NNBase64.h in Headers */ = {isa = PBXBuildFile; fileRef = 40447A691437127200C3DE5C /* NNBase64.h */; };
@@ -22,7 +20,6 @@
 		40447A701437127200C3DE5C /* NNDebug.h in Headers */ = {isa = PBXBuildFile; fileRef = 40447A6B1437127200C3DE5C /* NNDebug.h */; };
 		405F2C0A14BFCCB900A57CAD /* NNWebSocketOptions.h in Headers */ = {isa = PBXBuildFile; fileRef = 405F2C0814BFCCB900A57CAD /* NNWebSocketOptions.h */; };
 		405F2C0B14BFCCB900A57CAD /* NNWebSocketOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 405F2C0914BFCCB900A57CAD /* NNWebSocketOptions.m */; };
-		409D9A701437B32A009F2852 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 409D9A6F1437B32A009F2852 /* CFNetwork.framework */; };
 		409D9B081437BBB4009F2852 /* KWAfterAllNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9A781437BBB4009F2852 /* KWAfterAllNode.m */; };
 		409D9B091437BBB4009F2852 /* KWAfterEachNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9A7A1437BBB4009F2852 /* KWAfterEachNode.m */; };
 		409D9B0A1437BBB4009F2852 /* KWAsyncVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9A7C1437BBB4009F2852 /* KWAsyncVerifier.m */; };
@@ -91,7 +88,6 @@
 		409D9B491437BBB4009F2852 /* NSObject+KiwiVerifierAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B051437BBB4009F2852 /* NSObject+KiwiVerifierAdditions.m */; };
 		409D9B4A1437BBB4009F2852 /* NSValue+KiwiAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B071437BBB4009F2852 /* NSValue+KiwiAdditions.m */; };
 		409D9B4B1437BBCE009F2852 /* NNWebSocketFrameSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = 409AC8D8143714C50048E3A9 /* NNWebSocketFrameSpec.m */; };
-		409D9B4D1437BC10009F2852 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 409D9B4C1437BC10009F2852 /* CFNetwork.framework */; };
 		409D9B521437F901009F2852 /* NNWebSocketSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B511437F901009F2852 /* NNWebSocketSpec.m */; };
 		409D9B5514403241009F2852 /* NNWebSocketFrame.h in Headers */ = {isa = PBXBuildFile; fileRef = 409D9B5314403241009F2852 /* NNWebSocketFrame.h */; };
 		409D9B5614403241009F2852 /* NNWebSocketFrame.m in Sources */ = {isa = PBXBuildFile; fileRef = 409D9B5414403241009F2852 /* NNWebSocketFrame.m */; };
@@ -104,6 +100,10 @@
 		40F754B814B78F220044A17D /* NSTimer+NNUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 40F754B414B78F220044A17D /* NSTimer+NNUtil.m */; };
 		40FAB2E514B397F600760982 /* NNArgs.h in Headers */ = {isa = PBXBuildFile; fileRef = 40FAB2E314B397F600760982 /* NNArgs.h */; };
 		40FAB2E614B397F600760982 /* NNArgs.m in Sources */ = {isa = PBXBuildFile; fileRef = 40FAB2E414B397F600760982 /* NNArgs.m */; };
+		40FFD4D714CF45DE008244C6 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40FFD4D514CF45CF008244C6 /* CFNetwork.framework */; };
+		40FFD4D814CF461D008244C6 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40FFD4D514CF45CF008244C6 /* CFNetwork.framework */; };
+		40FFD4DA14CF4749008244C6 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40FFD4D914CF4749008244C6 /* UIKit.framework */; };
+		40FFD4DB14CF4771008244C6 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40FFD4D914CF4749008244C6 /* UIKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -126,8 +126,6 @@
 		4044766814370DAD00C3DE5C /* NNWebSocket.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NNWebSocket.m; sourceTree = "<group>"; };
 		4044766F14370DAD00C3DE5C /* NNWebSocketTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NNWebSocketTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4044767014370DAD00C3DE5C /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
-		4044767214370DAD00C3DE5C /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
-		4044767514370DAD00C3DE5C /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = Library/Frameworks/CoreGraphics.framework; sourceTree = DEVELOPER_DIR; };
 		4044767C14370DAD00C3DE5C /* NNWebSocketTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "NNWebSocketTests-Info.plist"; sourceTree = "<group>"; };
 		4044767E14370DAD00C3DE5C /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		40447A691437127200C3DE5C /* NNBase64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNBase64.h; path = vendor/NNUtil/NNUtil/NNBase64.h; sourceTree = SOURCE_ROOT; };
@@ -136,7 +134,6 @@
 		405F2C0814BFCCB900A57CAD /* NNWebSocketOptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NNWebSocketOptions.h; sourceTree = "<group>"; };
 		405F2C0914BFCCB900A57CAD /* NNWebSocketOptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketOptions.m; sourceTree = "<group>"; };
 		409AC8D8143714C50048E3A9 /* NNWebSocketFrameSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketFrameSpec.m; sourceTree = "<group>"; };
-		409D9A6F1437B32A009F2852 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		409D9A721437BBB4009F2852 /* Kiwi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Kiwi.h; sourceTree = "<group>"; };
 		409D9A731437BBB4009F2852 /* KiwiBlockMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KiwiBlockMacros.h; sourceTree = "<group>"; };
 		409D9A741437BBB4009F2852 /* KiwiConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KiwiConfiguration.h; sourceTree = "<group>"; };
@@ -287,7 +284,6 @@
 		409D9B051437BBB4009F2852 /* NSObject+KiwiVerifierAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+KiwiVerifierAdditions.m"; sourceTree = "<group>"; };
 		409D9B061437BBB4009F2852 /* NSValue+KiwiAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSValue+KiwiAdditions.h"; sourceTree = "<group>"; };
 		409D9B071437BBB4009F2852 /* NSValue+KiwiAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSValue+KiwiAdditions.m"; sourceTree = "<group>"; };
-		409D9B4C1437BC10009F2852 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		409D9B511437F901009F2852 /* NNWebSocketSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketSpec.m; sourceTree = "<group>"; };
 		409D9B5314403241009F2852 /* NNWebSocketFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NNWebSocketFrame.h; sourceTree = "<group>"; };
 		409D9B5414403241009F2852 /* NNWebSocketFrame.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NNWebSocketFrame.m; sourceTree = "<group>"; };
@@ -300,6 +296,8 @@
 		40F754B414B78F220044A17D /* NSTimer+NNUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSTimer+NNUtil.m"; path = "vendor/NNUtil/NNUtil/NSTimer+NNUtil.m"; sourceTree = SOURCE_ROOT; };
 		40FAB2E314B397F600760982 /* NNArgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNArgs.h; path = vendor/NNUtil/NNUtil/NNArgs.h; sourceTree = SOURCE_ROOT; };
 		40FAB2E414B397F600760982 /* NNArgs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNArgs.m; path = vendor/NNUtil/NNUtil/NNArgs.m; sourceTree = SOURCE_ROOT; };
+		40FFD4D514CF45CF008244C6 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
+		40FFD4D914CF4749008244C6 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -307,8 +305,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				409D9A701437B32A009F2852 /* CFNetwork.framework in Frameworks */,
+				40FFD4DA14CF4749008244C6 /* UIKit.framework in Frameworks */,
 				4044766314370DAD00C3DE5C /* Foundation.framework in Frameworks */,
+				40FFD4D714CF45DE008244C6 /* CFNetwork.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -316,11 +315,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				409D9B4D1437BC10009F2852 /* CFNetwork.framework in Frameworks */,
 				4044767114370DAD00C3DE5C /* SenTestingKit.framework in Frameworks */,
-				4044767314370DAD00C3DE5C /* UIKit.framework in Frameworks */,
+				40FFD4DB14CF4771008244C6 /* UIKit.framework in Frameworks */,
+				40FFD4D814CF461D008244C6 /* CFNetwork.framework in Frameworks */,
 				4044767414370DAD00C3DE5C /* Foundation.framework in Frameworks */,
-				4044767614370DAD00C3DE5C /* CoreGraphics.framework in Frameworks */,
 				4044767914370DAD00C3DE5C /* libNNWebSocket.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -340,8 +338,6 @@
 		4044765414370DAD00C3DE5C = {
 			isa = PBXGroup;
 			children = (
-				409D9B4C1437BC10009F2852 /* CFNetwork.framework */,
-				409D9A6F1437B32A009F2852 /* CFNetwork.framework */,
 				4044766414370DAD00C3DE5C /* NNWebSocket */,
 				4044767A14370DAD00C3DE5C /* NNWebSocketTests */,
 				4044766114370DAD00C3DE5C /* Frameworks */,
@@ -361,10 +357,10 @@
 		4044766114370DAD00C3DE5C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				40FFD4D914CF4749008244C6 /* UIKit.framework */,
+				40FFD4D514CF45CF008244C6 /* CFNetwork.framework */,
 				4044766214370DAD00C3DE5C /* Foundation.framework */,
 				4044767014370DAD00C3DE5C /* SenTestingKit.framework */,
-				4044767214370DAD00C3DE5C /* UIKit.framework */,
-				4044767514370DAD00C3DE5C /* CoreGraphics.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -911,7 +907,10 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "NNWebSocket/NNWebSocket-Prefix.pch";
-				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"NNWEBSOCKET_DEBUG_LOG=1",
+					"$(inherited)",
+				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INFOPLIST_FILE = "NNWebSocketTests/NNWebSocketTests-Info.plist";
 				OTHER_LDFLAGS = (

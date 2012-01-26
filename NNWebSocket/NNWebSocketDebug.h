@@ -5,7 +5,7 @@
 #endif
 
 #ifdef NNWEBSOCKET_DEBUG_LOG
-#define LOG(fmt, ...) NSLog(fmt, ##__VA_ARGS__)
+#define LOG(fmt, ...) NSLog(@"WebSocket:" fmt, ##__VA_ARGS__)
 #else
 #define LOG(fmt, ...)
 #endif

@@ -314,13 +314,12 @@ SHARED_STATE_METHOD()
     if (ctx.options.enableBackgroundingOnSocket) {
         [ctx.socket performBlock:^{
             if([ctx.socket enableBackgroundingOnSocket]) {
-                LOG(@"Succeed to start on background");
+                LOG(@"Succeed to set socket voip mode.");
             } else {
-                LOG(@"Failed to start on background");                
+                LOG(@"Failed to set socket voip mode.");                
             }
         }];
     }
-    LOG(@"Connected.");
     [self handshake:ctx];
 }
 - (void)didClose:(NNWebSocket*)ctx error:(NSError*)error
@@ -339,17 +338,17 @@ SHARED_STATE_METHOD()
     TRACE();
     NSAssert(tag == TAG_OPENING_HANDSHAKE, @"");
     CFHTTPMessageRef response = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, FALSE);
+    int errCd = 0;
     if (!CFHTTPMessageAppendBytes(response, [data bytes], [data length])) {
-        [self fail:ctx code:NNWebSocketErrorHttpResponse];
-        return;
+        errCd = NNWebSocketErrorHttpResponse;
+    } else if (!CFHTTPMessageIsHeaderComplete(response)) {
+        errCd = NNWebSocketErrorHttpResponseHeader;
+    } else if (CFHTTPMessageGetResponseStatusCode(response) != 101) {
+        errCd = NNWebSocketErrorHttpResponseStatus;
     }
-    if (!CFHTTPMessageIsHeaderComplete(response)) {
-        [self fail:ctx code:NNWebSocketErrorHttpResponseHeader];
-        return;
-    }
-    CFIndex statusCd = CFHTTPMessageGetResponseStatusCode(response);
-    if (statusCd != 101) {
-        [self fail:ctx code:NNWebSocketErrorHttpResponseStatus];
+    if (errCd > 0) {
+        CFRelease(response);
+        [self fail:ctx code:errCd];
         return;
     }
     NSString* upgrade = [(NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Upgrade")) autorelease];
