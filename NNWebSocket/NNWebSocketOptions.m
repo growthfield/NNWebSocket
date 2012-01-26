@@ -5,6 +5,7 @@
 @synthesize connectTimeout = connectTimeout_;
 @synthesize readTimeout = readTimeout_;
 @synthesize writeTimeout = writeTimeout_;
+@synthesize disconnectTimeout = disconnectTimeout_;
 @synthesize tlsSettings = tlsSettings_;
 @synthesize maxPayloadSize = maxPayloadSize_;
 @synthesize enableBackgroundingOnSocket = enableBackgroundingOnSocket_;
@@ -21,6 +22,7 @@
         self.connectTimeout = 5;
         self.readTimeout = 5;
         self.writeTimeout = 5;
+        self.disconnectTimeout = 5;
         self.maxPayloadSize = 16384;
         self.enableBackgroundingOnSocket = NO;
     }

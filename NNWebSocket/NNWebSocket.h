@@ -3,6 +3,7 @@
 #import "NNWebSocketOptions.h"
 #import "NNWebSocketFrame.h"
 #import "NNEventEmitter.h"
+#import "NNDispatch.h"
 
 @class NNWebSocketState;
 
@@ -17,6 +18,7 @@ typedef enum {
     NNWebSocketErrorHttpResponseHeaderUpgrade,
     NNWebSocketErrorHttpResponseHeaderConnection,
     NNWebSocketErrorHttpResponseHeaderWebSocketAccept,
+    NNWebSocketErrorDisconnectTimeout,
     // 2xx: wire format error
     NNWebSocketErrorReceiveFrameMask = 200,
 } NNWebSocketErrors;
@@ -39,6 +41,8 @@ typedef enum {
     NSUInteger readyPayloadDividedCnt_;
     NSNumber* closeCode_;
     BOOL clientInitiatedClosure_;
+    NNDispatch* disconnectTimeoutDispatch_;
+    
 }
 - (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols;
 - (id)initWithURL:(NSURL *)url origin:(NSString *)origin protocols:(NSString *)protocols options:(NNWebSocketOptions*)options;

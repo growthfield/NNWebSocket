@@ -222,9 +222,8 @@ describe(@"websocket", ^{
             [[theObject(&onConnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];
             [[theObject(&receivedFrame) shouldEventuallyBeforeTimingOutAfter(3.0)] beNonNil];            
             [[theObject(&onDisconnect) shouldEventuallyBeforeTimingOutAfter(3.0)] beYes];                
-        });        
+        });
     });
-    
     context(@"when server disconnects client", ^{
         __block NSNumber* onConnect = nil;
         __block NSNumber* onDisconnect = nil;

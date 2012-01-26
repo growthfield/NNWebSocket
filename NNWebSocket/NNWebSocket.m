@@ -25,7 +25,6 @@
     return instance_; \
 }
 
-
 typedef enum {
     NNWebSocketStatusNormalEnd = 1000,
     NNWebSocketStatusGoingAway = 1001,
@@ -57,6 +56,7 @@ typedef enum {
 @property(nonatomic, assign) NSUInteger readPayloadSplitCount;
 @property(nonatomic, retain) NSNumber* closeCode;
 @property(nonatomic, assign) BOOL clientInitiatedClosure;
+@property(nonatomic, retain) NNDispatch* disconnectTimeoutDispatch;
 - (void)didConnect;
 - (void)didConnectFailed:(NSError*)error;
 - (void)didDisconnect:(BOOL)clientInitiated status:(NSUInteger)status error:(NSError*)error;
@@ -128,6 +128,7 @@ typedef enum {
 @synthesize readPayloadSplitCount = readyPayloadDividedCnt_;
 @synthesize closeCode = closeCode_;
 @synthesize clientInitiatedClosure = clientInitiatedClosure_;
+@synthesize disconnectTimeoutDispatch = disconnectTimeoutDispatch_;
 - (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols
 {
     TRACE();
@@ -281,6 +282,7 @@ SHARED_STATE_METHOD()
     TRACE();
     ctx.closeCode = nil;
     ctx.clientInitiatedClosure = NO;
+    ctx.disconnectTimeoutDispatch = nil;
     if (ctx.socket.isConnected) {
         [ctx.socket disconnect];
     }
@@ -614,5 +616,17 @@ SHARED_STATE_METHOD()
         frame.payloadData = payloadData;
     }
     [ctx.socket writeData:[frame dataFrame] withTimeout:ctx.options.writeTimeout tag:TAG_WRITE_FRAME];
+    __block NNWebSocketStateDisconnecting* self_ = self;
+    __block NNWebSocket* ctx_ = ctx;
+    dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * ctx.options.disconnectTimeout);
+    ctx.disconnectTimeoutDispatch = [NNDispatch dispatchAfter:delay queue:dispatch_get_main_queue() block:^{
+        TRACE();
+        NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:NNWebSocketErrorDisconnectTimeout userInfo:nil];
+        [self_ didClose:ctx_ error:error];
+    }];
+}
+- (void)didExit:(NNWebSocket *)ctx
+{
+    [ctx.disconnectTimeoutDispatch cancel];
 }
 @end
