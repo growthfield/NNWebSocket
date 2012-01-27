@@ -177,6 +177,7 @@ typedef enum {
     self.expectedAcceptKey = nil;
     self.currentFrame = nil;
     self.closeCode = nil;
+    self.disconnectTimeoutDispatch = nil;
     [super dealloc];
 }
 - (void)connect
