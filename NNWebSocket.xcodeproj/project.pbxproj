@@ -106,6 +106,10 @@
 		40FFD4DB14CF4771008244C6 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40FFD4D914CF4749008244C6 /* UIKit.framework */; };
 		40FFD51214D1F56A008244C6 /* NNDispatch.h in Headers */ = {isa = PBXBuildFile; fileRef = 40FFD51014D1F56A008244C6 /* NNDispatch.h */; };
 		40FFD51314D1F56A008244C6 /* NNDispatch.m in Sources */ = {isa = PBXBuildFile; fileRef = 40FFD51114D1F56A008244C6 /* NNDispatch.m */; };
+		40FFD54614D460EA008244C6 /* NNReachability.h in Headers */ = {isa = PBXBuildFile; fileRef = 40FFD54414D460EA008244C6 /* NNReachability.h */; };
+		40FFD54714D460EA008244C6 /* NNReachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 40FFD54514D460EA008244C6 /* NNReachability.m */; };
+		40FFD54B14D46146008244C6 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40FFD54914D4612D008244C6 /* SystemConfiguration.framework */; };
+		40FFD54C14D46167008244C6 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40FFD54914D4612D008244C6 /* SystemConfiguration.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -302,6 +306,9 @@
 		40FFD4D914CF4749008244C6 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		40FFD51014D1F56A008244C6 /* NNDispatch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNDispatch.h; path = vendor/NNUtil/NNUtil/NNDispatch.h; sourceTree = SOURCE_ROOT; };
 		40FFD51114D1F56A008244C6 /* NNDispatch.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNDispatch.m; path = vendor/NNUtil/NNUtil/NNDispatch.m; sourceTree = SOURCE_ROOT; };
+		40FFD54414D460EA008244C6 /* NNReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NNReachability.h; path = vendor/NNUtil/NNUtil/NNReachability.h; sourceTree = SOURCE_ROOT; };
+		40FFD54514D460EA008244C6 /* NNReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NNReachability.m; path = vendor/NNUtil/NNUtil/NNReachability.m; sourceTree = SOURCE_ROOT; };
+		40FFD54914D4612D008244C6 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -309,6 +316,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40FFD54B14D46146008244C6 /* SystemConfiguration.framework in Frameworks */,
 				40FFD4DA14CF4749008244C6 /* UIKit.framework in Frameworks */,
 				4044766314370DAD00C3DE5C /* Foundation.framework in Frameworks */,
 				40FFD4D714CF45DE008244C6 /* CFNetwork.framework in Frameworks */,
@@ -319,6 +327,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40FFD54C14D46167008244C6 /* SystemConfiguration.framework in Frameworks */,
 				4044767114370DAD00C3DE5C /* SenTestingKit.framework in Frameworks */,
 				40FFD4DB14CF4771008244C6 /* UIKit.framework in Frameworks */,
 				40FFD4D814CF461D008244C6 /* CFNetwork.framework in Frameworks */,
@@ -361,6 +370,7 @@
 		4044766114370DAD00C3DE5C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				40FFD54914D4612D008244C6 /* SystemConfiguration.framework */,
 				40FFD4D914CF4749008244C6 /* UIKit.framework */,
 				40FFD4D514CF45CF008244C6 /* CFNetwork.framework */,
 				4044766214370DAD00C3DE5C /* Foundation.framework */,
@@ -425,6 +435,8 @@
 		40447A681437124100C3DE5C /* NNUtil */ = {
 			isa = PBXGroup;
 			children = (
+				40FFD54414D460EA008244C6 /* NNReachability.h */,
+				40FFD54514D460EA008244C6 /* NNReachability.m */,
 				40FFD51014D1F56A008244C6 /* NNDispatch.h */,
 				40FFD51114D1F56A008244C6 /* NNDispatch.m */,
 				40F754B114B78F220044A17D /* NSString+NNUtil.h */,
@@ -617,6 +629,7 @@
 				405F2C0A14BFCCB900A57CAD /* NNWebSocketOptions.h in Headers */,
 				40BB884014CB6AD90025A89A /* NNWebSocketDebug.h in Headers */,
 				40FFD51214D1F56A008244C6 /* NNDispatch.h in Headers */,
+				40FFD54614D460EA008244C6 /* NNReachability.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -729,6 +742,7 @@
 				40F754B814B78F220044A17D /* NSTimer+NNUtil.m in Sources */,
 				405F2C0B14BFCCB900A57CAD /* NNWebSocketOptions.m in Sources */,
 				40FFD51314D1F56A008244C6 /* NNDispatch.m in Sources */,
+				40FFD54714D460EA008244C6 /* NNReachability.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
