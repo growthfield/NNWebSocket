@@ -39,6 +39,7 @@ socket.onClose = ^(NNWebSocketStatus status, NSError *error) {
     NSLog(@"Closed");
 };
 [socket open];
+```
 
 ## License
 
