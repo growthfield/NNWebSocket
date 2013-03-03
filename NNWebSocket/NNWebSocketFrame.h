@@ -1,61 +1,49 @@
+// Copyright 2013 growthfield.jp
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//        http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #import <Foundation/Foundation.h>
+#import "NNWebSocketDefine.h"
 
-typedef enum {
-    NNWebSocketFrameOpcodeConitunuation = 0x0,
-    NNWebSocketFrameOpcodeText = 0x1,
-    NNWebSocketFrameOpcodeBinary = 0x2,
-    NNWebSocketFrameOpcodeReservedNonControl1 = 0x03,
-    NNWebSocketFrameOpcodeReservedNonControl2 = 0x04,
-    NNWebSocketFrameOpcodeReservedNonControl3 = 0x05,
-    NNWebSocketFrameOpcodeReservedNonControl4 = 0x06,
-    NNWebSocketFrameOpcodeReservedNonControl5 = 0x07,
-    NNWebSocketFrameOpcodeClose = 0x8,
-    NNWebSocketFrameOpcodePing = 0x9,
-    NNWebSocketFrameOpcodePong = 0xA
-} NNWebSocketFrameOpcode;
-
-typedef enum {
-    NNWebSocketFrameMaskFin = 0x80,
-    NNWebSocketFrameMaskRsv1 = 0x40,
-    NNWebSocketFrameMaskRsv2 = 0x20,
-    NNWebSocketFrameMaskRsv3 = 0x10,
-    NNWebSocketFrameMaskOpcode = 0x0f,
-    NNWebSocketFrameMaskMask = 0x80,
-    NNWebSocketFrameMaskPayloadLength = 0x7f
-} NNWebSocketFrameMask;
+typedef NS_OPTIONS(NSUInteger, NNWebSocketFrameTag)
+{
+    NNWebSocketFrameTagNone = 0,
+    NNWebSocketFrameTagControlFrame = 1 << 0,
+    NNWebSocketFrameTagDataFrame = 1 << 1,
+    NNWebSocketFrameTagTextDataFrame = 1 << 2,
+    NNWebSocketFrameTagBinaryDataFrame = 1 << 3,
+    NNWebSocketFrameTagSingleTextDataFrame = 1 << 4,
+    NNWebSocketFrameTagSingleBinaryDataFrame = 1 << 5,
+    NNWebSocketFrameTagFragmentedTextDataFrame = 1 << 6,
+    NNWebSocketFrameTagFragmentedBinaryDataFrame = 1 << 7,
+};
 
 @interface NNWebSocketFrame : NSObject
-{
-    @private
-    BOOL fin_;
-    BOOL rsv1_;
-    BOOL rsv2_;
-    BOOL rsv3_;
-    NNWebSocketFrameOpcode opcode_;
-    BOOL mask_;
-    UInt8 payloadLength_;
-    UInt64 extendedPayloadLength_;
-    UInt8* maskingKey_;
-    NSData* payload_;
-}
-@property(nonatomic, assign) BOOL fin;
-@property(nonatomic, assign) BOOL rsv1;
-@property(nonatomic, assign) BOOL rsv2;
-@property(nonatomic, assign) BOOL rsv3;
-@property(nonatomic, readonly, assign) NNWebSocketFrameOpcode opcode;
-@property(nonatomic, assign) BOOL mask;
-@property(nonatomic, assign) UInt8 payloadLength;
-@property(nonatomic, assign) UInt64 extendedPayloadLength;
-@property(nonatomic, assign) UInt8* maskingKey;
-@property(assign, getter=payloadString, setter=setPayloadString:) NSString* payloadString;
-@property(assign, getter=payloadData, setter=setPayloadData:) NSData* payloadData;
+
+@property(nonatomic) BOOL fin;
+@property(readonly, nonatomic) NNWebSocketFrameOpcode opcode;
+@property(nonatomic) NSData *data;
+@property(nonatomic) NSString *text;
+
 + (id)frameText;
 + (id)frameBinary;
 + (id)frameContinuation;
 + (id)frameClose;
 + (id)framePing;
 + (id)framePong;
-+ (id)frameWithOpcode:(NNWebSocketFrameOpcode)opcode;
-- (id)initWithOpcode:(NNWebSocketFrameOpcode)opcode;
-- (NSData*)dataFrame;
+- (id)initWithOpcode:(NNWebSocketFrameOpcode)opcode fin:(BOOL)fin payload:(NSData *)payload;
+- (void)addTags:(NNWebSocketFrameTag)tag;
+- (BOOL)hasTag:(NNWebSocketFrameTag)tag;
+- (NSData *)data;
+
 @end

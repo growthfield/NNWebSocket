@@ -1,6 +1,0 @@
-[submodule "vendor/NNUtil"]
-	path = vendor/NNUtil
-	url = git@github.com:growthfield/NNUtil.git
-[submodule "vendor/CocoaAsyncSocket"]
-	path = vendor/CocoaAsyncSocket
-	url = https://github.com/robbiehanson/CocoaAsyncSocket.git

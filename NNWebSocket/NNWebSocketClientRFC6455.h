@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#import "NNWebSocket.h"
-#import "NNWebSocketClientRFC6455.h"
+#import <Foundation/Foundation.h>
+#import "NNWebSocketClient.h"
+#import "NNWebSocketStateContext.h"
+#import "NNWebSocketTransportDelegate.h"
 
-@implementation NNWebSocket
+@interface NNWebSocketClientRFC6455 : NSObject<NNWebSocketClient, NNWebSocketStateContext, NNWebSocketTransportDelegate>
 
-+ (id<NNWebSocketClient>)client:(NSURL *)url options:(NNWebSocketOptions *)options
-{
-    return [[NNWebSocketClientRFC6455 alloc] initWithURL:url options:options];
-}
+- (id)initWithURL:(NSURL *)url options:(NNWebSocketOptions *)options;
 
 @end

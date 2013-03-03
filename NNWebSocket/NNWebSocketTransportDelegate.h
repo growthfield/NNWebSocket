@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#import "NNWebSocket.h"
-#import "NNWebSocketClientRFC6455.h"
+@class NNWebSocketTransport;
 
-@implementation NNWebSocket
+@protocol NNWebSocketTransportDelegate <NSObject>
 
-+ (id<NNWebSocketClient>)client:(NSURL *)url options:(NNWebSocketOptions *)options
-{
-    return [[NNWebSocketClientRFC6455 alloc] initWithURL:url options:options];
-}
+- (void)transportDidConnect:(NNWebSocketTransport *)transport;
+- (void)transportDidDisconnect:(NNWebSocketTransport *)transport error:(NSError *)error;
+- (void)transport:(NNWebSocketTransport *)transport didReadData:(NSData *)data tag:(long)tag;
+- (void)transport:(NNWebSocketTransport *)transport didWriteDataWithTag:(long)tag;
 
 @end

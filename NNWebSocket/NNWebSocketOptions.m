@@ -1,51 +1,41 @@
+// Copyright 2013 growthfield.jp
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//        http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #import "NNWebSocketOptions.h"
-#import "NNWebSocketDebug.h"
 
 @implementation NNWebSocketOptions
-@synthesize connectTimeout = connectTimeout_;
-@synthesize readTimeout = readTimeout_;
-@synthesize writeTimeout = writeTimeout_;
-@synthesize disconnectTimeout = disconnectTimeout_;
-@synthesize tlsSettings = tlsSettings_;
-@synthesize maxPayloadSize = maxPayloadSize_;
-@synthesize enableBackgroundingOnSocket = enableBackgroundingOnSocket_;
-+(NNWebSocketOptions*)options
+
++(NNWebSocketOptions *)options
 {
-    TRACE();
-    return [[[self alloc] init] autorelease];
+    return [[self alloc] init];
 }
+
 - (id)init
 {
-    TRACE();
     self = [super init];
     if (self) {
-        self.connectTimeout = 5;
-        self.readTimeout = 5;
-        self.writeTimeout = 5;
-        self.disconnectTimeout = 5;
-        self.maxPayloadSize = 16384;
-        self.enableBackgroundingOnSocket = NO;
+        self.connectTimeoutSec = 5;
+        self.closeTimeoutSec = 5;
+        self.readTimeoutSec =  5;
+        self.writeTimeoutSec = 5;
+        self.maxPayloadByteSize = 1073741824ull;
+        self.payloadSizeLimitBehavior = NNWebSocketPayloadSizeLimitBehaviorError;
+        self.keepWorkingOnBackground = NO;
+        self.disableAutomaticPingPong = NO;
+        self.verbose = NNWebSocketVerboseLevelNone;
     }
     return self;
 }
--(void)dealloc
-{
-    TRACE();
-    self.tlsSettings = nil;
-    [super dealloc];
-}
-- (id)copyWithZone:(NSZone *)zone
-{
-    TRACE();
-    NNWebSocketOptions* o = [[NNWebSocketOptions allocWithZone:zone] init];
-    if (o) {
-        o.connectTimeout = self.connectTimeout;
-        o.readTimeout = self.readTimeout;
-        o.writeTimeout = self.writeTimeout;
-        o.tlsSettings = [[self.tlsSettings copyWithZone:zone] autorelease];
-        o.maxPayloadSize = self.maxPayloadSize;
-        o.enableBackgroundingOnSocket = self.enableBackgroundingOnSocket;
-    }
-    return o;
-}
+
 @end

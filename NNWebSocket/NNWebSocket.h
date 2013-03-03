@@ -1,53 +1,23 @@
+// Copyright 2013 growthfield.jp
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//        http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #import <Foundation/Foundation.h>
-#import "GCDAsyncSocket.h"
+#import "NNWebSocketClient.h"
 #import "NNWebSocketOptions.h"
-#import "NNWebSocketFrame.h"
-#import "NNEventEmitter.h"
-#import "NNDispatch.h"
 
-@class NNWebSocketState;
+@interface NNWebSocket : NSObject
 
-#define NNWEBSOCKET_ERROR_DOMAIN @"NNWebSocketErrorDmain"
++ (id<NNWebSocketClient>)client:(NSURL *)url options:(NNWebSocketOptions *)options;
 
-typedef enum {
-    // 1xx: connection error
-    NNWebSocketErrorUnsupportedScheme = 100,
-    NNWebSocketErrorHttpResponse,
-    NNWebSocketErrorHttpResponseHeader,
-    NNWebSocketErrorHttpResponseStatus,
-    NNWebSocketErrorHttpResponseHeaderUpgrade,
-    NNWebSocketErrorHttpResponseHeaderConnection,
-    NNWebSocketErrorHttpResponseHeaderWebSocketAccept,
-    NNWebSocketErrorDisconnectTimeout,
-    // 2xx: wire format error
-    NNWebSocketErrorReceiveFrameMask = 200,
-} NNWebSocketErrors;
-
-@interface NNWebSocket : NNEventEmitter
-{
-    @private
-    NNWebSocketOptions* options_;
-    GCDAsyncSocket* socket_;
-    NNWebSocketState* state_;
-    NSString* scheme_;
-    NSString* host_;
-    UInt16 port_;
-    NSString* resource_;
-    NSString* protocols_;
-    NSString* origin_;
-    NSString* expectedAcceptKey_;
-    NNWebSocketFrame* currentFrame_;
-    UInt64 readPayloadRemains_;
-    NSUInteger readyPayloadDividedCnt_;
-    NSNumber* closeCode_;
-    BOOL clientInitiatedClosure_;
-    NNDispatch* disconnectTimeoutDispatch_;
-    
-}
-- (id)initWithURL:(NSURL*)url origin:(NSString*)origin protocols:(NSString*)protocols;
-- (id)initWithURL:(NSURL *)url origin:(NSString *)origin protocols:(NSString *)protocols options:(NNWebSocketOptions*)options;
-- (void)connect;
-- (void)disconnect;
-- (void)disconnectWithStatus:(NSUInteger)status;
-- (void)send:(NNWebSocketFrame*)frame;
 @end

@@ -1,0 +1,12 @@
+{
+  "name": "echoserver",
+  "description": "websocket echo server for test",
+  "version": "0.0.1",
+  "dependencies": {
+    "websocket": "1.0.8"
+  },
+  "engine": "node >= 0.6.10",
+  "scripts": {
+    "start": "node echoserver.js"
+  }
+}

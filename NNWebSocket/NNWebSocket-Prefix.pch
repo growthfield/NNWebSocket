@@ -5,3 +5,9 @@
 #ifdef __OBJC__
     #import <Foundation/Foundation.h>
 #endif
+
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 60000
+    #define NEEDS_DISPATCH_RETAIN_RELEASE 0
+#else
+    #define NEEDS_DISPATCH_RETAIN_RELEASE 1
+#endif
