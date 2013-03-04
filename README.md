@@ -102,12 +102,13 @@ Argument 'text' is a payload of the frame.
 
 This listener is called when a fragmented binary frame is received.  
 Argument 'data' is a payload of the frame.  
-'isFinal' is a flag whether this is end of fragments or not.
+'index' is a sequence number of fragments, which starts with 0.  
+'isFinal' is a flag whether this is end of fragments or not.  
 'userInfo' is a working area for user which is kept until end of fragments.
 
 ### onFrame ``^(NNWebSocketFrame *frame)``
 
-This listener is called When a frame is received.  
+This listener is called when a frame is received.  
 This is a low level listener and there is no case to use this normally.
 
 ## License
