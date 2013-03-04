@@ -50,15 +50,20 @@ Event listener `onOpen` or `onOpenFailed` is called after invoking this API.
 
 ### ``(void)sendText:(NSString *)text``
  
-Send text frame.  
+Send text as text frame.  
 This API can only send non fragmented text frame.  
 Other API ``(void)sendFrame:(NNWebSocketFrame *)frame`` can be used to send fragmented text frames. 
 
 ### ``(void)sendData:(NSData *)data``
 
-Send binary frame.
+Send data as binary frame.
 This API can only send non fragmented binary frame.  
 The API ``(void)sendFrame:(NNWebSocketFrame *)frame`` can be used to send fragmented binary frames. 
+
+### ``(void)sendFrame:(NNWebSocketFrame *)frame``
+
+Send a raw frame as it is.  
+Normally, This API is used to send fragmented text/binary frames.
 
 ### `(void)close`
 
