@@ -210,7 +210,8 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     _expectedAcceptKey = [self createExpectedWebsocketAccept:websocketKey];
     NSMutableString* handshake = [[NSMutableString alloc] init];
     NSURL *url = _context.url;
-    NSMutableString* resource = [NSMutableString stringWithString:url.path];
+    NSString *path = (__bridge_transfer NSString*)CFURLCopyPath((__bridge CFURLRef)url);
+    NSMutableString* resource = [NSMutableString stringWithString:path];
     if ([resource length] == 0) {
         [resource appendString:@"/"];
     }
