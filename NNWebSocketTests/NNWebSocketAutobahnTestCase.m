@@ -32,7 +32,7 @@ static NSString* GetReportUrl()
     return [NSString stringWithFormat:REPORT_URL, HOST, PORT, AGENT];
 }
 
-static id<NNWebSocketClient> GetClientWithOptions(NSString* url, NNWebSocketVerboseLevel verbose)
+static id<NNWebSocketClient> GetClientWithOptions(NSString* url, NSUInteger verbose)
 {
     NSURL* u = [NSURL URLWithString:url];
     NNWebSocketOptions* opts = [NNWebSocketOptions options];
@@ -51,12 +51,12 @@ static id<NNWebSocketClient> GetClientWithOptions(NSString* url, NNWebSocketVerb
 
 static id<NNWebSocketClient> GetCaseClient(NSUInteger caseNo)
 {
-    return GetClientWithOptions(GetCaseUrl(caseNo), NNWebSocketVerboseLevelError);
+    return GetClientWithOptions(GetCaseUrl(caseNo), 1);
 }
 
 static id<NNWebSocketClient> GetReportClient()
 {
-    return GetClientWithOptions(GetReportUrl(), NNWebSocketVerboseLevelError);
+    return GetClientWithOptions(GetReportUrl(), 1);
 }
 
 @interface NNWebSocketAutobahnTestCase : KWTestCase

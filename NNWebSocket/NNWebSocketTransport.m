@@ -16,14 +16,7 @@
 #import "NNWebSocketTransportDelegate.h"
 #import "NNWebSocketOptions.h"
 #import "NNUtils.h"
-
-#define LOG(level, format, ...) \
-if (_verbose >= level) { \
-NSLog(@"NNWebSocketTransport:" format, ##__VA_ARGS__); \
-}
-#define ERROR_LOG(format, ...) LOG(NNWebSocketVerboseLevelError, @"[ERROR] " format, ##__VA_ARGS__)
-#define INFO_LOG(format, ...) LOG(NNWebSocketVerboseLevelInfo, @"[INFO ] " format, ##__VA_ARGS__)
-#define DEBUG_LOG(format, ...) LOG(NNWebSocketVerboseLevelDebug, @"[DEBUG] " format, ##__VA_ARGS__)
+#import "NNWebSocketDebug.h"
 
 @implementation NNWebSocketTransport
 {
@@ -32,7 +25,7 @@ NSLog(@"NNWebSocketTransport:" format, ##__VA_ARGS__); \
     NSTimeInterval _writeTimeout;
     NSDictionary *_tlsSettings;
     BOOL _keepWorkingOnBackground;
-    NNWebSocketVerboseLevel _verbose;
+    NSUInteger _verbose;
     NNRunLoopBroker *_streamRunloopBroker;
     dispatch_queue_t _ioQueue;
     dispatch_queue_t _delegateQueue;
@@ -61,7 +54,7 @@ NSLog(@"NNWebSocketTransport:" format, ##__VA_ARGS__); \
 
 - (void)dealloc
 {
-    DEBUG_LOG(@"dealloc");
+    LogDebug(@"dealloc");
     #if NEEDS_DISPATCH_RETAIN_RELEASE
     dispatch_release(_ioQueue);
     dispatch_release(_delegateQueue);
@@ -116,7 +109,7 @@ NSLog(@"NNWebSocketTransport:" format, ##__VA_ARGS__); \
             BOOL r1 = CFReadStreamSetProperty(readStream, kCFStreamNetworkServiceType, (CFTypeRef) kCFStreamNetworkServiceTypeVoIP);
             BOOL r2 = CFWriteStreamSetProperty(writeStream, kCFStreamNetworkServiceType, (CFTypeRef) kCFStreamNetworkServiceTypeVoIP);
             if (!r1 || !r2) {
-                ERROR_LOG("Failed to enable working on background.");
+                LogError("Failed to enable working on background.");
                 [inputStream close];
                 [outputStream close];
                 dispatch_async(_delegateQueue, ^{

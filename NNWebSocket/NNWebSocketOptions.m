@@ -33,7 +33,7 @@
         self.payloadSizeLimitBehavior = NNWebSocketPayloadSizeLimitBehaviorError;
         self.keepWorkingOnBackground = NO;
         self.disableAutomaticPingPong = NO;
-        self.verbose = NNWebSocketVerboseLevelNone;
+        self.verbose = 0;
     }
     return self;
 }

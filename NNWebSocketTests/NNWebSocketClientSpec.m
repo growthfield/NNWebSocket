@@ -36,7 +36,7 @@ static  NNWebSocketOptions* GetDefaultOptions() {
     opts.writeTimeoutSec =  20;
     opts.readTimeoutSec =  20;
     opts.closeTimeoutSec =  20;
-    opts.verbose = NNWebSocketVerboseLevelNone;
+    opts.verbose = 0;
     opts.tlsSettings = @{
             (NSString *)kCFStreamSSLAllowsAnyRoot : @(YES),
             (NSString *)kCFStreamSSLValidatesCertificateChain : @(NO),
@@ -51,7 +51,7 @@ static id<NNWebSocketClient> GetClient(NSString* url, NNWebSocketOptions *opts)
     return client;
 }
 
-static id<NNWebSocketClient> GetEchoClient(NNWebSocketVerboseLevel verbose)
+static id<NNWebSocketClient> GetEchoClient(NSUInteger verbose)
 {
     NNWebSocketOptions *opts = GetDefaultOptions();
     opts.verbose = verbose;
@@ -98,7 +98,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
     context(@"when client open websocket", ^{
         context(@"with valid url", ^{
             it(@"onOpen should be called back", ^{
-                client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+                client = socket = GetEchoClient(0);
                 socket.onOpen = ^{
                     _opened = @(YES);
                 };
@@ -109,7 +109,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
         context(@"with invalid url", ^{
             it(@"onConnectFailed should be called back", ^{
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 client = socket = GetClient(@"ws://127.0.0.1:9999", opts);
                 socket.onOpen = ^{
                     _opened = @(YES);
@@ -125,7 +125,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
         context(@"with invalid url scheme", ^{
             it(@"onConnectFailed should be called back", ^{
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 NSString *url = [NSString stringWithFormat:@"http://%@:%d", HOST, PORT];
                 client = socket = GetClient(url, opts);
                 socket.onOpen = ^{
@@ -145,7 +145,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
         });
         context(@"with invoking open method twice more", ^{
             it(@"onOpen should be called back once", ^{
-                client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+                client = socket = GetEchoClient(0);
                 __block NSUInteger count = 0;
                 socket.onOpen = ^{
                     count++;
@@ -164,7 +164,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
         context(@"but timed it out", ^{
             it(@"onConnectFailed should be called back", ^{
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 opts.connectTimeoutSec =  0.0001;
                 client = socket = GetClient(GetEchoUrl(), opts);
                 socket.onOpen = ^{
@@ -187,7 +187,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
     context(@"when client close websocket", ^{
         context(@"with no status", ^{
             it(@"onClose should be called back", ^{
-                client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+                client = socket = GetEchoClient(0);
                 socket.onOpen = ^{
                     _opened = @(YES);
                     [socket close];
@@ -204,7 +204,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
         });
         context(@"with status", ^{
             it(@"onClose should be called back", ^{
-                client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+                client = socket = GetEchoClient(0);
                 socket.onOpen = ^{
                     _opened = @(YES);
                     [socket closeWithStatus:NNWebSocketStatusPolicyViolation];
@@ -223,7 +223,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
 
     context(@"when client recieves text frame", ^{
         it(@"onFrame should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(5);
             socket.onOpen = ^{
                 _opened = @(YES);
                 [socket sendText:@"こんにちは"];
@@ -237,7 +237,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(_calledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"onText should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             socket.onOpen = ^{
                 _opened = @(YES);
                 [socket sendText:@"hello"];
@@ -250,7 +250,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(_calledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"both onFrame and onText should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             __block NSNumber *onFrameCalledback = @(NO);
             __block NSNumber *onTextCalledback = @(NO);
             socket.onOpen = ^{
@@ -271,7 +271,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(onFrameCalledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"onData should not be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             socket.onOpen = ^{
                 _opened = @(YES);
                 [socket sendText:@"hello"];
@@ -284,7 +284,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[_calledback should] beNo];
         });
         it(@"onTextChunk should not be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             socket.onOpen = ^{
                 _opened = @(YES);
                 [socket sendText:@"hello"];
@@ -297,7 +297,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[_calledback should] beNo];
         });
         it(@"onDataChunk should not be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             socket.onOpen = ^{
                 _opened = @(YES);
                 [socket sendText:@"hello"];
@@ -313,7 +313,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
 
     context(@"when client recieves binary frame", ^{
         it(@"onFrame should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             NSData *d = [@"hello" dataUsingEncoding:NSUTF8StringEncoding];
             socket.onOpen = ^{
                 _opened = @(YES);
@@ -328,7 +328,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(_calledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"onData should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             NSData *d = [@"hello" dataUsingEncoding:NSUTF8StringEncoding];
             socket.onOpen = ^{
                 _opened = @(YES);
@@ -342,7 +342,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(_calledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"both onFrame and onData should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             __block NSNumber *onFrameCalledback = @(NO);
             __block NSNumber *onDataCalledback = @(NO);
             NSData *d = [@"hello" dataUsingEncoding:NSUTF8StringEncoding];
@@ -364,7 +364,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(onFrameCalledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"onText should not be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             NSData *d = [@"hello" dataUsingEncoding:NSUTF8StringEncoding];
             socket.onOpen = ^{
                 _opened = @(YES);
@@ -378,7 +378,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[_calledback should] beNo];
         });
         it(@"onTextChunk should not be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             NSData *d = [@"hello" dataUsingEncoding:NSUTF8StringEncoding];
             socket.onOpen = ^{
                 _opened = @(YES);
@@ -392,7 +392,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[_calledback should] beNo];
         });
         it(@"onDataChunk should not be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             NSData *d = [@"hello" dataUsingEncoding:NSUTF8StringEncoding];
             socket.onOpen = ^{
                 _opened = @(YES);
@@ -408,7 +408,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
     });
     context(@"when client recieves continuation binary frame", ^{
         it(@"onFrame should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             __block NSUInteger count = 0;
             NSArray *texts = @[@"aaaa", @"bbbb", @"cccc", @"dddd"];
             socket.onOpen = ^{
@@ -439,7 +439,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(_calledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"onDataChunk should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             NSArray *texts = @[@"aaaa", @"bbbb", @"cccc", @"dddd"];
             socket.onOpen = ^{
                 _opened = @(YES);
@@ -467,7 +467,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
     });
     context(@"when client recieves confinuation text frame", ^{
         it(@"onFrame should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             __block NSUInteger count = 0;
             NSArray *texts = @[@"aaaa", @"bbbb", @"cccc", @"dddd"];
             socket.onOpen = ^{
@@ -498,7 +498,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             [[expectFutureValue(_calledback) shouldEventuallyBeforeTimingOutAfter(5)] beYes];
         });
         it(@"onTextChunk should be called back", ^{
-            client = socket = GetEchoClient(NNWebSocketVerboseLevelNone);
+            client = socket = GetEchoClient(0);
             NSArray *texts = @[@"aaaa", @"bbbb", @"cccc", @"dddd"];
             socket.onOpen = ^{
                 _opened = @(YES);
@@ -529,7 +529,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
         context(@"and client recieves a large text frame", ^{
             it(@"websocket should be closed with status 1009", ^{
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 opts.payloadSizeLimitBehavior = NNWebSocketPayloadSizeLimitBehaviorError;
                 opts.maxPayloadByteSize = 128;
                 client = socket = GetClient(GetEchoUrl(), opts);
@@ -551,7 +551,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
         context(@"and client recieves a large binary frame", ^{
             it(@"websocket should be closed with status 1009", ^{
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 opts.payloadSizeLimitBehavior = NNWebSocketPayloadSizeLimitBehaviorError;
                 opts.maxPayloadByteSize = 128;
                 client = socket = GetClient(GetEchoUrl(), opts);
@@ -578,7 +578,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
                 __block NSNumber *chunkFinished = @(NO);
                 __block NSUInteger numberOfFrames = 0;
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 opts.payloadSizeLimitBehavior = NNWebSocketPayloadSizeLimitBehaviorSplit;
                 opts.maxPayloadByteSize = 8;
                 client = socket = GetClient(GetEchoUrl(), opts);
@@ -609,7 +609,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
             });
             it(@"chunk text should be split into valid utf8 texts", ^{
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 opts.payloadSizeLimitBehavior = NNWebSocketPayloadSizeLimitBehaviorSplit;
                 opts.maxPayloadByteSize = 4;
                 client = socket = GetClient(GetEchoUrl(), opts);
@@ -644,7 +644,7 @@ SPEC_BEGIN(NNWebSocketClientSpec)
                 __block NSNumber *chunkFinished = @(NO);
                 __block NSUInteger numberOfFrames = 0;
                 NNWebSocketOptions *opts = GetDefaultOptions();
-                opts.verbose = NNWebSocketVerboseLevelNone;
+                opts.verbose = 0;
                 opts.payloadSizeLimitBehavior = NNWebSocketPayloadSizeLimitBehaviorSplit;
                 opts.maxPayloadByteSize = 8;
                 client = socket = GetClient(GetEchoUrl(), opts);

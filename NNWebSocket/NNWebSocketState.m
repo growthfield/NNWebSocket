@@ -18,17 +18,12 @@
 #import "NNWebSocketStateContext.h"
 #import "NNWebSocketOptions.h"
 #import "NNWebSocketTransport.h"
+#import "NNWebSocketDebug.h"
 
+#define WEBSOCKET_CLIENT_NAME @"NNWebSocket"
+#define WEBSOCKET_CLIENT_VERSION @"1"
 #define WEBSOCKET_GUID @"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 #define WEBSOCKET_PROTOCOL_VERSION 13
-
-#define LOG(level, format, ...) \
-if (_optVerbose >= level) { \
-NSLog(@"NNWebSocketState:" format, ##__VA_ARGS__); \
-}
-#define ERROR_LOG(format, ...) LOG(NNWebSocketVerboseLevelError, @"[ERROR] " format, ##__VA_ARGS__)
-#define INFO_LOG(format, ...) LOG(NNWebSocketVerboseLevelInfo, @"[INFO ] " format, ##__VA_ARGS__)
-#define DEBUG_LOG(format, ...) LOG(NNWebSocketVerboseLevelDebug, @"[DEBUG] " format, ##__VA_ARGS__)
 
 typedef NS_ENUM(NSUInteger, NNWebSocketFrameMask)
 {
@@ -54,7 +49,7 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     @protected
     __weak id<NNWebSocketStateContext> _context;
     __weak NNWebSocketTransport *_transport;
-    NNWebSocketVerboseLevel _optVerbose;
+    NSUInteger _verbose;
 }
 
 @synthesize name = _name;
@@ -71,7 +66,7 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
         _name = name;
         _context = context;
         _transport = context.transport;
-        _optVerbose = context.options.verbose;
+        _verbose = context.options.verbose;
 
     }
     return self;
@@ -113,7 +108,7 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     BOOL isSchemeWs = [scheme caseInsensitiveCompare:@"ws"] == NSOrderedSame;
     BOOL isSchemeWss = [scheme caseInsensitiveCompare:@"wss"] == NSOrderedSame;
     if (!isSchemeWs && !isSchemeWss) {
-        ERROR_LOG(@"Unsupported scheme '%@'", scheme);
+        LogError(@"Unsupported scheme '%@'", scheme);
         NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:NNWebSocketErrorUnsupportedScheme userInfo:nil];
         [_context didOpenFailedWithError:error];
         return;
@@ -143,15 +138,15 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     CFHTTPMessageRef response = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, FALSE);
     NSUInteger errCd = 0;
     if (!CFHTTPMessageAppendBytes(response, [data bytes], [data length])) {
-        ERROR_LOG(@"Failed to create CFHTTPMessage.");
+        LogError(@"Failed to create CFHTTPMessage.");
         errCd = NNWebSocketErrorHttpResponse;
     } else if (!CFHTTPMessageIsHeaderComplete(response)) {
-        ERROR_LOG(@"Failed to validate http response header.");
+        LogError(@"Failed to validate http response header.");
         errCd = NNWebSocketErrorHttpResponseHeader;
     } else {
         CFIndex statusCode = CFHTTPMessageGetResponseStatusCode(response);
         if (statusCode != 101) {
-            ERROR_LOG(@"Failed to opening handshake. server returned http status %lu", statusCode);
+            LogError(@"Failed to opening handshake. server returned http status %lu", statusCode);
             errCd = NNWebSocketErrorHttpResponseStatus;
         }
     }
@@ -165,21 +160,21 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     NSString* acceptKey = (__bridge_transfer NSString*)CFHTTPMessageCopyHeaderFieldValue(response, CFSTR("Sec-WebSocket-Accept"));
     CFRelease(response);
     if ([upgrade caseInsensitiveCompare:@"websocket"] != NSOrderedSame) {
-        ERROR_LOG(@"Server returned invalid upgrade protocol name '%@'", upgrade);
+        LogError(@"Server returned invalid upgrade protocol name '%@'", upgrade);
         fail(NNWebSocketErrorHttpResponseHeaderUpgrade);
         return;
     }
     if ([connection caseInsensitiveCompare:@"upgrade"]!= NSOrderedSame)  {
-        ERROR_LOG(@"Server returned invalid connection field value '%@'", connection);
+        LogError(@"Server returned invalid connection field value '%@'", connection);
         fail(NNWebSocketErrorHttpResponseHeaderConnection);
         return;
     }
     if (![acceptKey isEqualToString:_expectedAcceptKey]) {
-        ERROR_LOG(@"Server returned unexpected accept key '%@'", acceptKey);
+        LogError(@"Server returned unexpected accept key '%@'", acceptKey);
         fail(NNWebSocketErrorHttpResponseHeaderWebSocketAccept);
         return;
     }
-    DEBUG_LOG(@"Open handshake is completed successfully");
+    LogDebug(@"Open handshake is completed successfully");
     [_context didOpen];
 }
 - (NSString*)createWebsocketKey
@@ -233,7 +228,7 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     [handshake appendFormat:@"Sec-WebSocket-Version:%d\r\n", WEBSOCKET_PROTOCOL_VERSION];
     [handshake appendFormat:@"\r\n"];
     NSData* request = [handshake dataUsingEncoding:NSASCIIStringEncoding];
-    DEBUG_LOG(@"Start open handshake.");
+    LogDebug(@"Start open handshake.");
     [_transport  writeData:request tag:NNWebSocketAsyncIOTagOpeningHandshake];
 }
 @end
@@ -350,9 +345,9 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
 - (void)transportDidDisconnect:(NNWebSocketTransport *)transport error:(NSError *)error
 {
     if (!error) {
-        INFO_LOG(@"TCP Socket is disconnected.");
+        LogInfo(@"TCP Socket is disconnected.");
     } else {
-        ERROR_LOG(@"TCP Socket is disconnected with error(domain:%@ code:%d)", error.domain, error.code);
+        LogError(@"TCP Socket is disconnected with error(domain:%@ code:%d)", error.domain, error.code);
     }
     [self changeToClosedWithError:error closureType:NNWebSocketClosureTypeUnclean];
 }
@@ -387,14 +382,14 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     };
     uint8_t *b = (uint8_t*)[data bytes];
     _opcode = (NNWebSocketFrameOpcode)(b[0] & NNWebSocketFrameMaskOpcode);
-    DEBUG_LOG(@"Reading frame header(opcode:%d)", _opcode);
+    LogDebug(@"Reading frame header(opcode:%d)", _opcode);
     if (_opcode >= NNWebSocketFrameOpcodeReservedDataFrame1 && _opcode <= NNWebSocketFrameOpcodeReservedDataFrame5) {
-        ERROR_LOG(@"Invalid reserved non control frame.");
+        LogError(@"Invalid reserved non control frame.");
         fail(NNWebSocketStatusProtocolError, NNWebSocketErrorUnkownDataFrameType);
         return;
     }
     if (_opcode >= NNWebSocketFrameOpcodeReservedControlFrame1 && _opcode <= NNWebSocketFrameOpcodeReservedControlFrame5) {
-        ERROR_LOG(@"Invalid reserved control frame.");
+        LogError(@"Invalid reserved control frame.");
         fail(NNWebSocketStatusProtocolError, NNWebSocketErrorUnkownControlFrameType);
         return;
     }
@@ -408,13 +403,13 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     BOOL rsv2 = (b[0] & NNWebSocketFrameMaskRsv2) > 0;
     BOOL rsv3 = (b[0] & NNWebSocketFrameMaskRsv3) > 0;
     if (rsv1 || rsv2 || rsv3) {
-        ERROR_LOG(@"Invalid RSV bits");
+        LogError(@"Invalid RSV bits");
         fail(NNWebSocketStatusProtocolError, NNWebSocketErrorInvalidRsvBit);
         return;
     }
     BOOL mask = (b[1] & NNWebSocketFrameMaskMask) > 0;
     if (mask) {
-        ERROR_LOG(@"Invalid mask.");
+        LogError(@"Invalid mask.");
         fail(NNWebSocketStatusProtocolError, NNWebSocketErrorReceiveFrameMask);
         return;
     }
@@ -458,12 +453,12 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
 - (void)readFramePayload
 {
     _payloadSize = _payloadLength <= 125 ? (uint64_t) _payloadLength : _extendedPayloadLength;
-    DEBUG_LOG(@"Reading payload data(%qu bytes)", _payloadSize);
+    LogDebug(@"Reading payload data(%qu bytes)", _payloadSize);
     if (_payloadSize == 0) {
         [self didReadFramePayload:[NSData data]];
         return;
     } else if (_payloadSize > _optMaxPayloadSize && _optPayloadSizeLimitBehavior == NNWebSocketPayloadSizeLimitBehaviorError) {
-        ERROR_LOG(@"Payload size is too large.(%qu bytes)", _payloadSize);
+        LogError(@"Payload size is too large.(%qu bytes)", _payloadSize);
         _context.status = NNWebSocketStatusMessageTooBig;
         _context.error = nil;
         _context.closureType = NNWebSocketClosureTypeClientInitiated;
@@ -507,7 +502,7 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
         if (len > 2) {
             NNUTF8Buffer *buff = [NNUTF8Buffer buffer];
             if (![buff appendData:[data subdataWithRange:NSMakeRange(2, len -2)]]) {
-                ERROR_LOG(@"Received a close frame with invalid UTF8 payload.");
+                LogError(@"Received a close frame with invalid UTF8 payload.");
                 status = NNWebSocketStatusInvalidFramePayloadData;
             }
         }
@@ -524,19 +519,19 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
                 case NNWebSocketStatusInternalServerError:
                     break;
                 default:
-                    ERROR_LOG(@"Received a close frame with invalid status %d.", status);
+                    LogError(@"Received a close frame with invalid status %d.", status);
                     status = NNWebSocketStatusProtocolError;
             }
         }
     } else if (len == 1) {
-        ERROR_LOG(@"Received a close frame with invalid status bytes size.");
+        LogError(@"Received a close frame with invalid status bytes size.");
         status = NNWebSocketStatusProtocolError;
     }
     [self didReceiveCloseFrame:status];
 }
 - (void)didReceiveCloseFrame:(NNWebSocketStatus)status
 {
-    DEBUG_LOG(@"Start close handshake by server.")
+    LogDebug(@"Start close handshake by server.")
     _context.status = status;
     _context.error = nil;
     _context.closureType = NNWebSocketClosureTypeServerInitiated;
@@ -557,7 +552,7 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
 - (void)didEnter
 {
     if (_context.closureType == NNWebSocketClosureTypeClientInitiated) {
-        DEBUG_LOG(@"Start close handshake by client.")
+        LogDebug(@"Start close handshake by client.")
     }
     NNWebSocketFrame* frame = [NNWebSocketFrame frameClose];
     NNWebSocketStatus s = _context.status;
@@ -569,16 +564,16 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     NSData* payloadData = [NSData dataWithBytes:b length:2];
     frame.data = payloadData;
     if (_context.closureType == NNWebSocketClosureTypeServerInitiated) {
-        DEBUG_LOG(@"Reply close frame to server. (status:%d)", s);
-        DEBUG_LOG(@"Close handshake is completed successfully");
+        LogDebug(@"Reply close frame to server. (status:%d)", s);
+        LogDebug(@"Close handshake is completed successfully");
     } else {
-        DEBUG_LOG(@"Send close frame. (status:%d)", s);
+        LogDebug(@"Send close frame. (status:%d)", s);
     }
     [super sendFrame:frame];
     NSTimeInterval closeTimeout = _context.options.closeTimeoutSec;
-    DEBUG_LOG(@"Set close timer which waits %.1f sec.", closeTimeout);
+    LogDebug(@"Set close timer which waits %.1f sec.", closeTimeout);
     _context.closeTimer = NNCreateTimer(dispatch_get_main_queue(), closeTimeout, ^{
-        INFO_LOG(@"Close timeout.");
+        LogInfo(@"Close timeout.");
         NSError* error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:NNWebSocketErrorCloseTimeout userInfo:nil];
         _context.error = error;
         [_context didClose];
@@ -593,13 +588,13 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
 }
 - (void)didReceiveCloseFrame:(NNWebSocketStatus)status
 {
-    DEBUG_LOG(@"Got close response frame from server. (status:%d)",status);
-    DEBUG_LOG(@"Close handshake is completed successfully");
+    LogDebug(@"Got close response frame from server. (status:%d)",status);
+    LogDebug(@"Close handshake is completed successfully");
 }
 
 - (void)transportDidDisconnect:(NNWebSocketTransport *)transport error:(NSError *)error
 {
-    DEBUG_LOG(@"TCP Socket is disconnected by server.")
+    LogDebug(@"TCP Socket is disconnected by server.")
     NSError *err = error;
     if ([err.domain isEqualToString:NSPOSIXErrorDomain] && err.code == ECONNRESET) {
        err = nil;

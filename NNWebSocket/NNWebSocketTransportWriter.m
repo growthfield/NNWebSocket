@@ -7,15 +7,7 @@
 
 #import "NNWebSocketTransportWriter.h"
 #import "NNUtils.h"
-
-#define LOG(level, format, ...) \
-if (_verbose >= level) { \
-NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
-}
-#define ERROR_LOG(format, ...) LOG(NNWebSocketVerboseLevelError, @"[ERROR] " format, ##__VA_ARGS__)
-#define INFO_LOG(format, ...) LOG(NNWebSocketVerboseLevelInfo, @"[INFO ] " format, ##__VA_ARGS__)
-#define DEBUG_LOG(format, ...) LOG(NNWebSocketVerboseLevelDebug, @"[DEBUG] " format, ##__VA_ARGS__)
-#define TRACE_LOG(format, ...) LOG(NNWebSocketVerboseLevelTrace, @"[TRACE] " format, ##__VA_ARGS__)
+#import "NNWebSocketDebug.h"
 
 @implementation NNWebSocketTransportWriteTask
 @end
@@ -47,7 +39,7 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
         dispatch_retain(_queue);
         #endif
         _tasks = [NSMutableArray array];
-        _verbose = NNWebSocketVerboseLevelNone;
+        _verbose = 0;
         _closed = YES;
     }
     return self;
@@ -55,7 +47,7 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
 
 - (void)dealloc
 {
-    DEBUG_LOG(@"dealloc");
+    LogDebug(@"dealloc");
     _stream.delegate = nil;
     #if NEEDS_DISPATCH_RETAIN_RELEASE
     dispatch_release(_queue);
@@ -67,9 +59,9 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
 - (void)open:(NSTimeInterval)timeout
 {
     dispatch_async(_queue, ^{
-        DEBUG_LOG("Opening output stream.");
+        LogDebug("Opening output stream.");
         _timer = NNCreateTimer(_queue, timeout, ^{
-            ERROR_LOG("Timeout while attempting to open a output stream.");
+            LogError("Timeout while attempting to open a output stream.");
             NSError *error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:NNWebSocketErrorConnectTimeout userInfo:nil];
             [self didError:error];
         });
@@ -82,7 +74,7 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
     dispatch_async(_queue, ^{
         if (!_closed) {
             if (_stream.streamStatus != NSStreamStatusClosed) {
-                DEBUG_LOG("Closing output stream.");
+                LogDebug("Closing output stream.");
                 [_stream close];
             }
             [_stream removeFromRunLoop:_runLoop forMode:NSDefaultRunLoopMode];
@@ -94,7 +86,7 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
 - (void)addTask:(NNWebSocketTransportWriteTask *)task
 {
     dispatch_async(_queue, ^{
-        TRACE_LOG(@"Add new task. bytes:%d tag:%lu",task->data.length,  task->tag);
+        LogTrace(@"Add new task. bytes:%d tag:%lu",task->data.length,  task->tag);
         [_tasks addObject:task];
         [self flush];
     });
@@ -102,14 +94,14 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
 
 - (void)flush
 {
-    TRACE_LOG("Checking tasks.");
+    LogTrace("Checking tasks.");
     if (!_currentTask) {
         if (_tasks.count == 0) {
-            TRACE_LOG(@"No write task.");
+            LogTrace(@"No write task.");
             return;
         }
         _currentTask = [_tasks objectAtIndex:0];
-        TRACE_LOG(@"Task found. bytes:%d tag:%lu",_currentTask->data.length,  _currentTask->tag);
+        LogTrace(@"Task found. bytes:%d tag:%lu",_currentTask->data.length,  _currentTask->tag);
         _offset = 0;
         [_tasks removeObjectAtIndex:0];
         _timer = NNCreateTimer(_queue, _currentTask->timeout, ^{
@@ -124,12 +116,12 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
         if (len > 0) {
             _offset += len;
             if (_offset == dataLen) {
-                TRACE_LOG("All data of current task has been writen. bytes:%d", dataLen);
+                LogTrace("All data of current task has been writen. bytes:%d", dataLen);
                 NNWebSocketTransportWriteTask *capturedTask =  _currentTask;
                 [self didWrite:capturedTask];
                 _currentTask = nil;
             } else {
-                TRACE_LOG("%d bytes has been written. %d/%d", len, _offset, dataLen);
+                LogTrace("%d bytes has been written. %d/%d", len, _offset, dataLen);
             }
         }
     }}
@@ -139,7 +131,7 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
 {
     // NSStreamEventOpenCompleted is fired twice occasionally.
     dispatch_once(&_onceOpenToken, ^{
-        DEBUG_LOG("Output stream has been opened.");
+        LogDebug("Output stream has been opened.");
         _closed = NO;
         dispatch_source_cancel(_timer);
         [_delegate writerDidOpen:self];
@@ -169,22 +161,22 @@ NSLog(@"NNWebSocketTransportWriter:" format, ##__VA_ARGS__); \
 - (void)stream:(NSStream *)stream handleEvent:(NSStreamEvent)eventCode
 {
     if (eventCode == NSStreamEventOpenCompleted) {
-        TRACE_LOG(@"Fire NSStreamEventOpenCompleted");
+        LogTrace(@"Fire NSStreamEventOpenCompleted");
         dispatch_async(_queue, ^{
             [self didOpen];
         });
     } else if (eventCode == NSStreamEventErrorOccurred) {
-        TRACE_LOG(@"Fire NSStreamEventErrorOccurred.");
+        LogTrace(@"Fire NSStreamEventErrorOccurred.");
         dispatch_async(_queue, ^{
             [self didError:stream.streamError];
         });
     } else if (eventCode == NSStreamEventEndEncountered) {
-        TRACE_LOG(@"Fire NSStreamEventEndEncountered.");
+        LogTrace(@"Fire NSStreamEventEndEncountered.");
         dispatch_async(_queue, ^{
             [self didClose];
         });
     } else if (eventCode == NSStreamEventHasSpaceAvailable) {
-        TRACE_LOG(@"Fire NSStreamEventHasSpaceAvailable.");
+        LogTrace(@"Fire NSStreamEventHasSpaceAvailable.");
         dispatch_async(_queue, ^{
             [self flush];
         });

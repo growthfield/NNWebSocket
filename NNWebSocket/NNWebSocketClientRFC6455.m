@@ -17,19 +17,12 @@
 #import "NNWebSocketState.h"
 #import "NNUtils.h"
 #import "NNWebSocketTransport.h"
-
-#define LOG(level, format, ...) \
-if (_optVerbose >= level) { \
-NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
-}
-#define ERROR_LOG(format, ...) LOG(NNWebSocketVerboseLevelError, @"[ERROR] " format, ##__VA_ARGS__)
-#define INFO_LOG(format, ...) LOG(NNWebSocketVerboseLevelInfo, @"[INFO ] " format, ##__VA_ARGS__)
-#define DEBUG_LOG(format, ...) LOG(NNWebSocketVerboseLevelDebug, @"[DEBUG] " format, ##__VA_ARGS__)
+#import "NNWebSocketDebug.h"
 
 @implementation NNWebSocketClientRFC6455
 {
     BOOL _optDisableAutomaticPingPong;
-    NNWebSocketVerboseLevel _optVerbose;
+    NSUInteger _verbose;
     NNWebSocketFrame* _fragmentedFirstFrame;
     NSUInteger _chunkIndex;
     NSMutableDictionary *_chunkUserInfo;
@@ -65,11 +58,11 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
 {
     self = [super init];
     if (self) {
+        _verbose = options.verbose;
         _transport = [[NNWebSocketTransport alloc] initWithDelegate:self options:options];
         _url = url;
         _options = options;
         _optDisableAutomaticPingPong =  options.disableAutomaticPingPong;
-        _optVerbose = options.verbose;
         _channelStateClosed = [NNWebSocketStateClosed stateWithContext:self name:@"CLOSED"];
         _channelStateConnecting = [NNWebSocketStateConnecting stateWithContext:self name:@"CONNECTING"];
         _channelStateOpen = [NNWebSocketStateOpen stateWithContext:self name:@"OPEN"];
@@ -81,12 +74,12 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
 
 - (void)dealloc
 {
-    DEBUG_LOG(@"dealloc");
+    LogDebug(@"dealloc");
 }
 
 - (void)open
 {
-    INFO_LOG(@"Connecting to %@", [_url absoluteString]);
+    LogInfo(@"Connecting to %@", [_url absoluteString]);
     [_state open];
 }
 
@@ -97,13 +90,13 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
 
 - (void)closeWithStatus:(NNWebSocketStatus)status
 {
-    INFO_LOG(@"Disconnecting with status %d", status);
+    LogInfo(@"Disconnecting with status %d", status);
     [_state closeWithStatus:status error:nil];
 }
 
 - (void)sendFrame:(NNWebSocketFrame *)frame
 {
-    INFO_LOG(@"Sending a frame(opcode:%d payload:%d)", frame.opcode, frame.data.length);
+    LogInfo(@"Sending a frame(opcode:%d payload:%d)", frame.opcode, frame.data.length);
     [_state sendFrame:frame];
 }
 
@@ -188,7 +181,7 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
 - (void)changeState:(NNWebSocketState *)to
 {
     NNWebSocketState *from = _state;
-    INFO_LOG(@"State(%@ -> %@)", from.name, to.name);
+    LogInfo(@"State(%@ -> %@)", from.name, to.name);
     [from didExit];
     _state = to;
     [to didEnter];
@@ -209,9 +202,9 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
 - (void)didOpenFailedWithError:(NSError *)error
 {
     if (error) {
-        ERROR_LOG(@"Failed to connect with error(domain=%@ code=%d)", error.domain, error.code);
+        LogError(@"Failed to connect with error(domain=%@ code=%d)", error.domain, error.code);
     } else {
-        ERROR_LOG(@"Failed to connect.");
+        LogError(@"Failed to connect.");
     }
     [self changeState:_channelStateClosed];
     if (_onOpenFailed) _onOpenFailed(error);
@@ -220,14 +213,14 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
 - (void)didOpen
 {
     [self changeState:_channelStateOpen];
-    INFO_LOG(@"Websocket is opened.");
+    LogInfo(@"Websocket is opened.");
     if (_onOpen) _onOpen();
 }
 
 - (void)didReceiveFrame:(NNWebSocketFrame *)frame
 {
     NNWebSocketFrameOpcode opcode = frame.opcode;
-    INFO_LOG(@"Received a frame(opcode:%d payload:%d)", opcode, frame.data.length);
+    LogInfo(@"Received a frame(opcode:%d payload:%d)", opcode, frame.data.length);
     // PingPong
     if (opcode == NNWebSocketFrameOpcodePing && !_optDisableAutomaticPingPong) {
         NNWebSocketFrame *pong = [NNWebSocketFrame framePong];
@@ -235,7 +228,7 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
         [self sendFrame:pong];
     }
     // Tagging
-    NNWebSocketFrameTag tags = 0;
+    NNWebSocketFrameTag tags = (NNWebSocketFrameTag)0;
     if (opcode == NNWebSocketFrameOpcodeText) {
         tags |= NNWebSocketFrameTagTextDataFrame;
         if (frame.fin) {
@@ -265,12 +258,12 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
     [frame addTags:tags];
     if ([frame hasTag:NNWebSocketFrameTagDataFrame]) {
         if (!_fragmentedFirstFrame && opcode == NNWebSocketFrameOpcodeContinuation) {
-            ERROR_LOG(@"Detected invalid headless continuation frame.");
+            LogError(@"Detected invalid headless continuation frame.");
             [self failWithStatus:NNWebSocketStatusProtocolError errorCode:NNWebSocketErrorHeadlessContinuationFrame];
             return;
         }
         if (_fragmentedFirstFrame && frame.fin && opcode != NNWebSocketFrameOpcodeContinuation) {
-            ERROR_LOG(@"Detected lack of termination of conitinucation frames.");
+            LogError(@"Detected lack of termination of conitinucation frames.");
             [self failWithStatus:NNWebSocketStatusProtocolError errorCode:NNWebSocketErrorLackOfContinuationFrameTermination];
             return;
         }
@@ -294,7 +287,7 @@ NSLog(@"NNWebSocketClient:" format, ##__VA_ARGS__); \
 - (void)didClose
 {
     [self changeState:_channelStateClosed];
-    INFO_LOG(@"Websocket is closed by %@ with status %d.", _closureType == NNWebSocketClosureTypeServerInitiated ? @"server" : @"client", self.status);
+    LogInfo(@"Websocket is closed by %@ with status %d.", _closureType == NNWebSocketClosureTypeServerInitiated ? @"server" : @"client", self.status);
     if (_onClose) _onClose(self.status, self.error);
 }
 

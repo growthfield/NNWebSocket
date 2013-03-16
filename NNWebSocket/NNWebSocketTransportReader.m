@@ -14,15 +14,7 @@
 
 #import "NNWebSocketTransportReader.h"
 #import "NNUtils.h"
-
-#define LOG(level, format, ...) \
-if (_verbose >= level) { \
-NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
-}
-#define ERROR_LOG(format, ...) LOG(NNWebSocketVerboseLevelError, @"[ERROR] " format, ##__VA_ARGS__)
-#define INFO_LOG(format, ...) LOG(NNWebSocketVerboseLevelInfo, @"[INFO ] " format, ##__VA_ARGS__)
-#define DEBUG_LOG(format, ...) LOG(NNWebSocketVerboseLevelDebug, @"[DEBUG] " format, ##__VA_ARGS__)
-#define TRACE_LOG(format, ...) LOG(NNWebSocketVerboseLevelTrace, @"[TRACE] " format, ##__VA_ARGS__)
+#import "NNWebSocketDebug.h"
 
 @implementation NNWebSocketTransportReadTask
 @end
@@ -60,7 +52,7 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
         _work = malloc(_bufferMaxLength);
         _buffer = [NSMutableData dataWithCapacity:_bufferMaxLength];
         _tasks = [NSMutableArray array];
-        _verbose = NNWebSocketVerboseLevelNone;
+        _verbose = 0;
         _closed = YES;
     }
     return self;
@@ -68,7 +60,7 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 
 - (void)dealloc
 {
-    DEBUG_LOG(@"dealloc");
+    LogDebug(@"dealloc");
     _stream.delegate = nil;
     free(_work);
     #if NEEDS_DISPATCH_RETAIN_RELEASE
@@ -79,9 +71,9 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 - (void)open:(NSTimeInterval)timeout
 {
     dispatch_async(_queue, ^{
-        DEBUG_LOG("Opening input stream.");
+        LogDebug("Opening input stream.");
         _timer = NNCreateTimer(_queue, timeout, ^{
-            ERROR_LOG("Timeout while attempting to open a input stream.");
+            LogError("Timeout while attempting to open a input stream.");
             NSError *error = [NSError errorWithDomain:NNWEBSOCKET_ERROR_DOMAIN code:NNWebSocketErrorConnectTimeout userInfo:nil];
             [self didError:error];
         });
@@ -94,7 +86,7 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
     dispatch_async(_queue, ^{
         if (!_closed) {
             if (_stream.streamStatus != NSStreamStatusClosed) {
-                DEBUG_LOG("Closing input stream.");
+                LogDebug("Closing input stream.");
                 [_stream close];
             }
             [_stream removeFromRunLoop:_runLoop forMode:NSDefaultRunLoopMode];
@@ -106,7 +98,7 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 - (void)addTask:(NNWebSocketTransportReadTask *)task
 {
     dispatch_async(_queue, ^{
-        TRACE_LOG(@"Add new read task. length:%lu terminator:%@ tag:%lu",(unsigned long)task->lengthToRead, task->terminator, task->tag);
+        LogTrace(@"Add new read task. length:%lu terminator:%@ tag:%lu",(unsigned long)task->lengthToRead, task->terminator, task->tag);
         [_tasks addObject:task];
         [self pump];
     });
@@ -121,18 +113,18 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 
     while (canReadStream || hasBufferBytesAvailable) { @autoreleasepool {
         if (canReadStream) {
-            TRACE_LOG("Attempting to read maximum %d bytes from stream", _bufferMaxLength - _buffer.length);
+            LogTrace("Attempting to read maximum %d bytes from stream", _bufferMaxLength - _buffer.length);
             NSInteger result = [_stream read:_work maxLength:_bufferMaxLength - _buffer.length];
             if (result <= 0) {
-                DEBUG_LOG("Failed to read stream. result:%d", result);
+                LogDebug("Failed to read stream. result:%d", result);
                 return;
             }
             [_buffer appendBytes:_work length:(NSUInteger)result];
-            TRACE_LOG("Read %d bytes into buffer. buffer length:%d", result, _buffer.length);
+            LogTrace("Read %d bytes into buffer. buffer length:%d", result, _buffer.length);
         }
         if (!_currentTask) {
             if (_tasks.count == 0) {
-                TRACE_LOG(@"No read task.");
+                LogTrace(@"No read task.");
                 return;
             }
             _currentTask = [_tasks objectAtIndex:0];
@@ -160,15 +152,15 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 
 - (void)performReadToLength
 {
-    TRACE_LOG("Read buffer until %d bytes completed.", _currentTask->lengthToRead);
+    LogTrace("Read buffer until %d bytes completed.", _currentTask->lengthToRead);
     NSUInteger remains = _currentTask->lengthToRead - _currentData.length;
     if (remains < _buffer.length) {
         [_currentData appendBytes:_buffer.bytes length:remains];
         _buffer = [[NSMutableData alloc] initWithBytes:_buffer.bytes + remains length:_buffer.length - remains];
-        TRACE_LOG(@"Fnished to read entire %d bytes on task.", _currentTask->lengthToRead);
+        LogTrace(@"Fnished to read entire %d bytes on task.", _currentTask->lengthToRead);
     } else {
         [_currentData appendData:_buffer];
-        TRACE_LOG(@"Read %d bytes from buffer.", _buffer.length);
+        LogTrace(@"Read %d bytes from buffer.", _buffer.length);
         [_buffer setLength:0];
     }
     if (_currentData.length == _currentTask->lengthToRead) {
@@ -183,16 +175,16 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 - (void)performReadToData
 {
     NSData *terminator = _currentTask->terminator;
-    TRACE_LOG("Read buffer until terminator.");
+    LogTrace("Read buffer until terminator.");
     NSUInteger lastCurrentDataLen = _currentData.length;
     [_currentData appendData:_buffer];
     NSRange range = [_currentData rangeOfData:terminator options:(NSDataSearchOptions)0 range:NSMakeRange((NSUInteger) 0, _currentData.length)];
     NSUInteger indexInCurrentData = range.location;
     if (indexInCurrentData == NSNotFound) {
-        TRACE_LOG(@"Terminator not found. %d bytes has been read from a buffer.", _currentData.length);
+        LogTrace(@"Terminator not found. %d bytes has been read from a buffer.", _currentData.length);
         [_buffer setLength:0];
     } else {
-        TRACE_LOG("Terminator found. finished to read entire %d bytes.", _currentData.length);
+        LogTrace("Terminator found. finished to read entire %d bytes.", _currentData.length);
         [_currentData setLength:indexInCurrentData + terminator.length];
         NSUInteger indexInBuffer = indexInCurrentData - lastCurrentDataLen + terminator.length;
         _buffer = [[_buffer subdataWithRange:NSMakeRange(indexInBuffer, _buffer.length - indexInBuffer)] mutableCopy];
@@ -208,7 +200,7 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 {
     // NSStreamEventOpenCompleted is fired twice occasionally.
     dispatch_once(&_onceOpenToken, ^{
-        DEBUG_LOG("Input stream has been opened.");
+        LogDebug("Input stream has been opened.");
         _closed = NO;
         dispatch_source_cancel(_timer);
         [_delegate readerDidOpen:self];
@@ -238,22 +230,22 @@ NSLog(@"NNWebSocketTransportReader:" format, ##__VA_ARGS__); \
 - (void)stream:(NSStream *)stream handleEvent:(NSStreamEvent)eventCode
 {
     if (eventCode == NSStreamEventOpenCompleted) {
-        TRACE_LOG(@"Fire NSStreamEventOpenCompleted.");
+        LogTrace(@"Fire NSStreamEventOpenCompleted.");
         dispatch_async(_queue, ^{
             [self didOpen];
         });
     } else if (eventCode == NSStreamEventErrorOccurred) {
-        TRACE_LOG(@"Fire NSStreamEventErrorOccurred.");
+        LogTrace(@"Fire NSStreamEventErrorOccurred.");
         dispatch_async(_queue, ^{
             [self didError:stream.streamError];
         });
     } else if (eventCode == NSStreamEventEndEncountered) {
-        TRACE_LOG(@"Fire NSStreamEventEndEncountered.");
+        LogTrace(@"Fire NSStreamEventEndEncountered.");
         dispatch_async(_queue, ^{
             [self didClose];
         });
     } else if (eventCode == NSStreamEventHasBytesAvailable) {
-        TRACE_LOG(@"Fire NSStreamEventHasBytesAvaiable.");
+        LogTrace(@"Fire NSStreamEventHasBytesAvaiable.");
         dispatch_async(_queue, ^{
             [self pump];
         });

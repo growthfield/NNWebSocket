@@ -32,6 +32,7 @@
 		4C425C5E22C74B2A8494B422 /* libPods-NNWebSocketTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 957A8F6332C54C7EADED8CCC /* libPods-NNWebSocketTests.a */; settings = {}; };
 		F3A9CC4195E6586678D7FAF5 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F3A9C22406A001D540F8AEA6 /* Security.framework */; };
 		F3A9CC4A4670228BFBF42C86 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F3A9C3FE13DE6F09323977E7 /* CFNetwork.framework */; };
+		F3A9CD47528580D57D7CC89A /* NNWebSocketDebug.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = F3A9C7D27EE13CB8FB3DD18D /* NNWebSocketDebug.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +53,7 @@
 			dstSubfolderSpec = 16;
 			files = (
 				40931C5516E3DA0000EBC81F /* NNWebSocket.h in CopyFiles */,
+				F3A9CD47528580D57D7CC89A /* NNWebSocketDebug.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +100,7 @@
 		957A8F6332C54C7EADED8CCC /* libPods-NNWebSocketTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "libPods-NNWebSocketTests.a"; path = "libPods-NNWebSocketTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3A9C22406A001D540F8AEA6 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		F3A9C3FE13DE6F09323977E7 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
+		F3A9C7D27EE13CB8FB3DD18D /* NNWebSocketDebug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NNWebSocketDebug.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,6 +188,7 @@
 				40931C5416E3DA0000EBC81F /* NNWebSocket.h */,
 				40931C5616E3DA0000EBC81F /* NNWebSocket.m */,
 				40931C5216E3DA0000EBC81F /* Supporting Files */,
+				F3A9C7D27EE13CB8FB3DD18D /* NNWebSocketDebug.h */,
 			);
 			path = NNWebSocket;
 			sourceTree = "<group>";

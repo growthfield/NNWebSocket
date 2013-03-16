@@ -28,7 +28,7 @@
 @property(nonatomic) NNWebSocketPayloadSizeLimitBehavior payloadSizeLimitBehavior;
 @property(nonatomic) BOOL keepWorkingOnBackground;
 @property(nonatomic) BOOL disableAutomaticPingPong;
-@property(nonatomic) NNWebSocketVerboseLevel verbose;
+@property(nonatomic) NSUInteger verbose;
 
 + (NNWebSocketOptions*)options;
 

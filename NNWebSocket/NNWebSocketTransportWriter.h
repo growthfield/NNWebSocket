@@ -48,7 +48,7 @@
 @interface NNWebSocketTransportWriter : NSObject<NSStreamDelegate>
 
 @property(weak, nonatomic) id<NNWebSocketTransportWriterDelegate> delegate;
-@property(nonatomic) NNWebSocketVerboseLevel verbose;
+@property(nonatomic) NSUInteger verbose;
 
 - (id)initWithStream:(NSOutputStream *)stream runLoop:(NSRunLoop *)runLoop queue:(dispatch_queue_t)queue;
 - (void)open:(NSTimeInterval)timeout;

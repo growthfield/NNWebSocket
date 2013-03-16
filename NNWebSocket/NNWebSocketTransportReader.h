@@ -50,7 +50,7 @@
 @interface NNWebSocketTransportReader : NSObject<NSStreamDelegate>
 
 @property(weak, nonatomic) id<NNWebSocketTransportReaderDelegate> delegate;
-@property(nonatomic) NNWebSocketVerboseLevel verbose;
+@property(nonatomic) NSUInteger verbose;
 
 - (id)initWithStream:(NSInputStream *)stream runLoop:(NSRunLoop *)runLoop queue:(dispatch_queue_t)queue;
 - (void)open:(NSTimeInterval)timeout;
