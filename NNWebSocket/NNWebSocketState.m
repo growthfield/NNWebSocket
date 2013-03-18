@@ -115,6 +115,10 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
     }
     [_transport connectToHost:host port:port secure:isSchemeWss];
 }
+- (void)closeWithStatus:(NNWebSocketStatus)status error:(NSError *)error
+{
+    [_context didOpenFailedWithError:nil];
+}
 - (void)transportDidConnect:(NNWebSocketTransport *)transport
 {
     [self handshake];
