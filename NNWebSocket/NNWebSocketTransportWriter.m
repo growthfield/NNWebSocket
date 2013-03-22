@@ -133,26 +133,26 @@
     dispatch_once(&_onceOpenToken, ^{
         LogDebug("Output stream has been opened.");
         _closed = NO;
-        dispatch_source_cancel(_timer);
+        NNCancelTimer(_timer);
         [_delegate writerDidOpen:self];
     });
 }
 
 - (void)didWrite:(NNWebSocketTransportWriteTask *)task
 {
-    dispatch_source_cancel(_timer);
+    NNCancelTimer(_timer);
     [_delegate writer:self didWrite:task];
 }
 
 - (void)didError:(NSError *)error
 {
-    dispatch_source_cancel(_timer);
+    NNCancelTimer(_timer);
     [_delegate writer:self didError:error];
 }
 
 - (void)didClose
 {
-    dispatch_source_cancel(_timer);
+    NNCancelTimer(_timer);
     [_delegate writerDidClose:self];
 }
 

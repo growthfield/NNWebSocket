@@ -67,7 +67,6 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
         _context = context;
         _transport = context.transport;
         _verbose = context.options.verbose;
-
     }
     return self;
 }
@@ -585,7 +584,7 @@ typedef NS_ENUM(NSUInteger, NNWebSocketAsyncIOTag) {
 }
 - (void)didExit
 {
-    dispatch_source_cancel(_context.closeTimer);
+    NNCancelTimer(_context.closeTimer);
     #if NEEDS_DISPATCH_RETAIN_RELEASE
     dispatch_release(_context.closeTimer);
     #endif

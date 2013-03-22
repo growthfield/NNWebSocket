@@ -18,6 +18,7 @@
 // NNCreateTimer
 // ================================================================
 dispatch_source_t NNCreateTimer(dispatch_queue_t queue, NSTimeInterval timeout, dispatch_block_t block);
+void NNCancelTimer(dispatch_source_t);
 
 // ================================================================
 // NSRunloopBroker

@@ -202,26 +202,26 @@
     dispatch_once(&_onceOpenToken, ^{
         LogDebug("Input stream has been opened.");
         _closed = NO;
-        dispatch_source_cancel(_timer);
+        NNCancelTimer(_timer);
         [_delegate readerDidOpen:self];
     });
 }
 
 - (void)didError:(NSError *)error
 {
-    dispatch_source_cancel(_timer);
+    NNCancelTimer(_timer);
     [_delegate reader:self didError:error];
 }
 
 - (void)didRead:(NNWebSocketTransportReadTask *)task data:(NSData *)data
 {
-    dispatch_source_cancel(_timer);
+    NNCancelTimer(_timer);
     [_delegate reader:self didRead:task data:data];
 }
 
 - (void)didClose
 {
-    dispatch_source_cancel(_timer);
+    NNCancelTimer(_timer);
     [_delegate readerDidClose:self];
 }
 

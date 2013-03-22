@@ -34,6 +34,15 @@ dispatch_source_t NNCreateTimer(dispatch_queue_t queue, NSTimeInterval timeout, 
     dispatch_resume(timer);
     return timer;
 }
+// ================================================================
+// NNCreateTimer
+// ================================================================
+void NNCancelTimer(dispatch_source_t timer)
+{
+    if (timer) {
+        dispatch_source_cancel(timer);
+    }
+}
 
 // ================================================================
 // NSRunloopBroker
